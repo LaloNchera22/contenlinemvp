@@ -26,7 +26,8 @@ body {
     @apply btn border border-surface-border hover:bg-surface-border/40 text-white;
   }
   .label {
-    @apply block text-xs uppercase tracking-wide text-white/50 mb-1;
+    /* /60 mínimo para cumplir el contraste WCAG AA (4.5:1) sobre la card. */
+    @apply block text-xs uppercase tracking-wide text-white/60 mb-1;
   }
   .input {
     @apply w-full rounded-lg bg-surface border border-surface-border px-3 py-2 text-sm outline-none focus:border-brand;

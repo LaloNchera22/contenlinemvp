@@ -53,11 +53,22 @@ export default function Home() {
         <Feature title="Seguridad Web3" body="SIWE, RLS en Supabase, verificación onchain y signed URLs para contenido privado." />
       </section>
 
-      <footer className="border-t border-surface-border px-6 py-6 text-center text-sm text-white/40">
-        Contenline · Pagos en USDC sobre Polygon ·{' '}
-        <Link href="/dashboard" className="hover:text-white">
-          Dashboard
-        </Link>
+      <footer className="border-t border-surface-border px-6 py-6 text-center text-sm text-white/60">
+        <p>Contenline · Protocolo non-custodial de pagos en USDC sobre Polygon</p>
+        <nav className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+          <Link href="/dashboard" className="hover:text-white">
+            Dashboard
+          </Link>
+          <Link href="/privacy" className="hover:text-white">
+            Privacidad
+          </Link>
+          <Link href="/terms" className="hover:text-white">
+            Términos
+          </Link>
+          <Link href="/cookies" className="hover:text-white">
+            Cookies
+          </Link>
+        </nav>
       </footer>
     </main>
   );

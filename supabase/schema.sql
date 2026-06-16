@@ -9,10 +9,14 @@
 CREATE TABLE IF NOT EXISTS users (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   wallet        TEXT UNIQUE NOT NULL,
-  username      TEXT UNIQUE NOT NULL,
+  -- username: minúsculas, dígitos y guion bajo, 3–32 chars. Evita inyección de
+  -- caracteres raros y XSS reflejado en rutas /[username].
+  username      TEXT UNIQUE NOT NULL CHECK (username ~ '^[a-z0-9_]{3,32}$'),
   display_name  TEXT NOT NULL,
   bio           TEXT,
   avatar_url    TEXT,
+  -- Contenido para adultos: activa el age-gate del perfil público.
+  is_adult      BOOLEAN DEFAULT false,
   created_at    TIMESTAMPTZ DEFAULT now()
 );
 
@@ -49,6 +53,11 @@ CREATE TABLE IF NOT EXISTS subscription_plans (
   interval      TEXT NOT NULL CHECK (interval IN ('monthly','yearly')),
   description   TEXT,
   active        BOOLEAN DEFAULT true,
+  -- Identificador entero estable para el contrato onchain. El contrato
+  -- subscribe(creator, uint256 planId) NO acepta UUIDs; este entero es el que
+  -- se pasa a setPlan()/subscribe() y el que confirm-transaction usa para
+  -- mapear el evento Subscribed.planId de vuelta a este plan.
+  onchain_plan_id BIGINT GENERATED ALWAYS AS IDENTITY UNIQUE,
   created_at    TIMESTAMPTZ DEFAULT now()
 );
 
@@ -90,6 +99,7 @@ CREATE TABLE IF NOT EXISTS content (
   media_url     TEXT,
   media_type    TEXT CHECK (media_type IN ('image','video','document')),
   is_exclusive  BOOLEAN DEFAULT true,
+  is_adult      BOOLEAN DEFAULT false,
   created_at    TIMESTAMPTZ DEFAULT now()
 );
 
@@ -380,5 +390,43 @@ BEGIN
     PERFORM cron.unschedule('cleanup-nonces');
   END IF;
   PERFORM cron.schedule('cleanup-nonces', '0 * * * *', 'SELECT cleanup_expired_nonces()');
+END;
+$$;
+
+-- ----------------------- MIGRACIONES IDEMPOTENTES -----------------------
+-- Para bases de datos creadas antes de estas columnas/constraints. CREATE TABLE
+-- IF NOT EXISTS no altera tablas ya existentes, así que las aplicamos aquí.
+DO $$
+BEGIN
+  -- subscription_plans.onchain_plan_id (mapeo UUID ↔ uint256 del contrato)
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'subscription_plans' AND column_name = 'onchain_plan_id'
+  ) THEN
+    ALTER TABLE subscription_plans
+      ADD COLUMN onchain_plan_id BIGINT GENERATED ALWAYS AS IDENTITY UNIQUE;
+  END IF;
+
+  -- users.is_adult / content.is_adult (age-gate de contenido adulto)
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'users' AND column_name = 'is_adult'
+  ) THEN
+    ALTER TABLE users ADD COLUMN is_adult BOOLEAN DEFAULT false;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'content' AND column_name = 'is_adult'
+  ) THEN
+    ALTER TABLE content ADD COLUMN is_adult BOOLEAN DEFAULT false;
+  END IF;
+
+  -- Constraint de formato de username (no falla si ya existe).
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'users_username_format'
+  ) THEN
+    ALTER TABLE users
+      ADD CONSTRAINT users_username_format CHECK (username ~ '^[a-z0-9_]{3,32}$');
+  END IF;
 END;
 $$;

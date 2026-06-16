@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPublicClient, http, parseEventLogs } from 'viem';
-import { polygon } from 'viem/chains';
-import { getSessionFromRequest } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isWhitelistedContract, PAYMENT_EVENT_ABI, SUBSCRIPTION_EVENT_ABI } from '@/lib/contracts';
 import { calculateFee, FeeCategory } from '@/lib/fees';
+import { getChain, getRpcUrl } from '@/lib/chain';
 
 export const runtime = 'nodejs';
 
 const publicClient = createPublicClient({
-  chain: polygon,
-  transport: http(process.env.POLYGON_RPC_URL),
+  chain: getChain(),
+  transport: http(getRpcUrl()),
 });
 
 const CATEGORY_BY_INDEX: Record<number, FeeCategory> = {
@@ -29,15 +28,17 @@ const MAX_AMOUNT_RAW = 100_000n * 1_000_000n;
 
 /**
  * POST /api/transactions/confirm
- * body: { txHash, category? }
- * Verifica el txHash contra el RPC de Polygon antes de registrar en DB.
- * (En producción esta lógica vive en la Edge Function confirm-transaction;
- *  aquí se replica para el flujo del dashboard.)
+ * body: { txHash }
+ *
+ * Verifica el txHash contra el RPC antes de registrar en DB. El crédito al
+ * creador y el monto se DERIVAN del evento onchain + la fuente de verdad en DB
+ * (payment_sessions / subscription_plans), nunca del caller. Por eso el endpoint
+ * no exige autenticación: tanto el creador (dashboard) como un fan que paga un
+ * checkout o una suscripción pueden confirmar su propia tx sin poder falsificar
+ * a quién se acredita. Toda la validación es onchain + DB e idempotente por
+ * txHash.
  */
 export async function POST(req: NextRequest) {
-  const session = getSessionFromRequest(req);
-  if (!session) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
-
   let body: { txHash?: string };
   try {
     body = await req.json();
@@ -76,12 +77,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Contrato no autorizado' }, { status: 400 });
   }
 
-  // 3. Decodificar evento esperado.
-  //    Solo consideramos logs EMITIDOS por el contrato whitelisteado (receipt.to).
-  //    parseEventLogs decodifica cualquier log cuya firma coincida, sin importar
-  //    quién lo emitió; sin este filtro, un contrato malicioso involucrado en la
-  //    misma tx podría inyectar un PaymentCompleted/Subscribed falso con un `to`
-  //    y `amount` arbitrarios y acreditarse pagos que nunca ocurrieron.
+  // 3. Decodificar evento esperado. Solo logs EMITIDOS por el contrato
+  //    whitelisteado (receipt.to); sin este filtro un contrato malicioso en la
+  //    misma tx podría inyectar un evento falso y acreditarse un pago.
   const contractLogs = receipt.logs.filter(
     (log) => log.address.toLowerCase() === receipt.to!.toLowerCase(),
   );
@@ -92,26 +90,26 @@ export async function POST(req: NextRequest) {
   let amountRaw: bigint;
   let feeRaw: bigint;
   let fromWallet: string;
-  let recipientWallet: string;
+  let creatorId: string;
   let description: string | null = null;
+  let apiKeyId: string | null = null;
+  // Datos diferidos para el upsert de suscripción (tras validar montos).
+  let subContext: { planUuid: string; subscriber: string; expiresAt: bigint } | null = null;
 
   if (paymentLogs.length > 0) {
     const ev = paymentLogs[0].args as {
       from: string; to: string; sessionId: string; amount: bigint; fee: bigint; category: number;
     };
 
-    // El sessionId proviene del evento onchain: validar UUID v4 antes de usarlo.
     if (!UUID_V4.test(ev.sessionId)) {
       return NextResponse.json({ error: 'sessionId inválido' }, { status: 400 });
     }
 
-    // El monto es un parámetro que el caller controla en el contrato, así que no
-    // es de confianza: un atacante podría pagar 1 micro-USDC por un curso de 500.
-    // La payment session en Supabase es la fuente de verdad del monto esperado;
-    // exigimos que exista y que el monto onchain coincida exactamente.
+    // La payment session es la fuente de verdad: monto esperado, creador y la
+    // API key que originó el cobro (para atribuir volumen por key).
     const { data: paymentSession } = await admin
       .from('payment_sessions')
-      .select('id, amount_usdc')
+      .select('id, amount_usdc, creator_id, api_key_id')
       .eq('id', ev.sessionId)
       .maybeSingle();
     if (!paymentSession) {
@@ -129,29 +127,54 @@ export async function POST(req: NextRequest) {
     amountRaw = ev.amount;
     feeRaw = ev.fee;
     fromWallet = ev.from;
-    recipientWallet = ev.to;
+    creatorId = paymentSession.creator_id;
+    apiKeyId = paymentSession.api_key_id ?? null;
     description = `session:${ev.sessionId}`;
   } else if (subLogs.length > 0) {
     const ev = subLogs[0].args as {
       subscriber: string; creator: string; planId: bigint; amount: bigint; fee: bigint; expiresAt: bigint;
     };
+
+    // El creador se DERIVA del destinatario onchain (ev.creator).
+    const { data: creator } = await admin
+      .from('users')
+      .select('id')
+      .ilike('wallet', ev.creator)
+      .maybeSingle();
+    if (!creator) {
+      return NextResponse.json({ error: 'Creador onchain desconocido' }, { status: 400 });
+    }
+
+    // El planId onchain (uint256) mapea a subscription_plans.onchain_plan_id.
+    // Sin esta validación el contrato podría llamarse con un planId arbitrario
+    // (válido onchain, inexistente en DB) y registraríamos la tx sin contexto.
+    const onchainPlanId = ev.planId.toString();
+    const { data: plan } = await admin
+      .from('subscription_plans')
+      .select('id, price_usdc')
+      .eq('creator_id', creator.id)
+      .eq('onchain_plan_id', onchainPlanId)
+      .maybeSingle();
+    if (!plan) {
+      return NextResponse.json({ error: 'Plan de suscripción no encontrado' }, { status: 400 });
+    }
+    const expectedRaw = BigInt(Math.round(Number(plan.price_usdc) * 1e6));
+    if (ev.amount !== expectedRaw) {
+      return NextResponse.json(
+        { error: 'El monto onchain no coincide con el precio del plan' },
+        { status: 400 },
+      );
+    }
+
     category = 'subscription';
     amountRaw = ev.amount;
     feeRaw = ev.fee;
     fromWallet = ev.subscriber;
-    recipientWallet = ev.creator;
-    description = `plan:${ev.planId.toString()}`;
+    creatorId = creator.id;
+    description = `plan:${plan.id}`;
+    subContext = { planUuid: plan.id, subscriber: ev.subscriber, expiresAt: ev.expiresAt };
   } else {
     return NextResponse.json({ error: 'No se encontró evento esperado' }, { status: 400 });
-  }
-
-  // El destinatario onchain DEBE ser la wallet del usuario autenticado.
-  // Sin esto, cualquiera podría reclamar (y acreditarse) el pago hecho a otro creador.
-  if (recipientWallet.toLowerCase() !== session.wallet.toLowerCase()) {
-    return NextResponse.json(
-      { error: 'La transacción no fue dirigida a tu wallet' },
-      { status: 403 },
-    );
   }
 
   // Acotar el monto crudo antes de convertir: Number(bigint) pierde precisión
@@ -170,7 +193,7 @@ export async function POST(req: NextRequest) {
   const { data: inserted, error } = await admin
     .from('transactions')
     .insert({
-      creator_id: session.sub,
+      creator_id: creatorId,
       category,
       amount_usdc: amount,
       fee_percent: feePercent * 100,
@@ -179,6 +202,7 @@ export async function POST(req: NextRequest) {
       from_wallet: fromWallet,
       tx_hash: txHash,
       description,
+      api_key_id: apiKeyId,
       verified: true,
     })
     .select('*')
@@ -186,6 +210,48 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     return NextResponse.json({ error: 'No se pudo registrar la transacción' }, { status: 500 });
+  }
+
+  // 5a. Pago vía checkout: marcar la payment session como completada.
+  if (apiKeyId !== null || (description?.startsWith('session:') ?? false)) {
+    const sessionId = description?.startsWith('session:') ? description.slice('session:'.length) : null;
+    if (sessionId) {
+      await admin
+        .from('payment_sessions')
+        .update({ status: 'completed', tx_hash: txHash })
+        .eq('id', sessionId);
+    }
+  }
+
+  // 5b. Suscripción: espejar el estado onchain en la tabla subscriptions.
+  if (subContext) {
+    const expiresIso = new Date(Number(subContext.expiresAt) * 1000).toISOString();
+    const { data: existingSub } = await admin
+      .from('subscriptions')
+      .select('id')
+      .eq('creator_id', creatorId)
+      .ilike('subscriber_wallet', subContext.subscriber)
+      .maybeSingle();
+    if (existingSub) {
+      await admin
+        .from('subscriptions')
+        .update({
+          plan_id: subContext.planUuid,
+          active: true,
+          expires_at: expiresIso,
+          last_tx_hash: txHash,
+        })
+        .eq('id', existingSub.id);
+    } else {
+      await admin.from('subscriptions').insert({
+        creator_id: creatorId,
+        subscriber_wallet: subContext.subscriber,
+        plan_id: subContext.planUuid,
+        active: true,
+        expires_at: expiresIso,
+        last_tx_hash: txHash,
+      });
+    }
   }
 
   return NextResponse.json({ transaction: inserted, verified: true });

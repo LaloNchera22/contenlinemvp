@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { safeHttpsUrl } from '@/lib/url';
 import SubscribeButton from './SubscribeButton';
+import AgeGate from './AgeGate';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -9,14 +11,14 @@ async function getCreator(username: string) {
   const admin = createAdminClient();
   const { data: user } = await admin
     .from('users')
-    .select('id, wallet, username, display_name, bio, avatar_url')
+    .select('id, wallet, username, display_name, bio, avatar_url, is_adult')
     .eq('username', username)
     .maybeSingle();
   if (!user) return null;
 
   const { data: plans } = await admin
     .from('subscription_plans')
-    .select('id, name, price_usdc, interval, description')
+    .select('id, name, price_usdc, interval, description, onchain_plan_id')
     .eq('creator_id', user.id)
     .eq('active', true);
 
@@ -27,14 +29,16 @@ export default async function CreatorPage({ params }: { params: { username: stri
   const data = await getCreator(params.username);
   if (!data) notFound();
   const { user, plans } = data;
+  const avatar = safeHttpsUrl(user.avatar_url);
 
   return (
     <main className="min-h-screen max-w-3xl mx-auto px-6 py-16">
+      {user.is_adult && <AgeGate username={user.username} />}
       <div className="flex items-center gap-4">
         <div className="h-20 w-20 rounded-full bg-brand/30 overflow-hidden">
-          {user.avatar_url && (
+          {avatar && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={user.avatar_url} alt={user.display_name} className="h-full w-full object-cover" />
+            <img src={avatar} alt={user.display_name} className="h-full w-full object-cover" />
           )}
         </div>
         <div>
@@ -48,7 +52,7 @@ export default async function CreatorPage({ params }: { params: { username: stri
       <h2 className="mt-12 text-lg font-semibold">Planes de suscripción</h2>
       <div className="mt-4 grid sm:grid-cols-2 gap-4">
         {plans.length === 0 && (
-          <p className="text-sm text-white/40">Este creador aún no publicó planes.</p>
+          <p className="text-sm text-white/60">Este creador aún no publicó planes.</p>
         )}
         {plans.map((p) => (
           <div key={p.id} className="card">
@@ -56,15 +60,21 @@ export default async function CreatorPage({ params }: { params: { username: stri
             {p.description && <p className="text-sm text-white/60 mt-1">{p.description}</p>}
             <p className="mt-3 text-2xl font-bold">
               ${Number(p.price_usdc).toFixed(2)}{' '}
-              <span className="text-sm font-normal text-white/40">
+              <span className="text-sm font-normal text-white/60">
                 USDC / {p.interval === 'monthly' ? 'mes' : 'año'}
               </span>
             </p>
-            <SubscribeButton
-              planId={p.id}
-              creatorWallet={user.wallet}
-              priceUsdc={Number(p.price_usdc)}
-            />
+            {p.onchain_plan_id != null ? (
+              <SubscribeButton
+                onchainPlanId={p.onchain_plan_id}
+                creatorWallet={user.wallet}
+                priceUsdc={Number(p.price_usdc)}
+              />
+            ) : (
+              <p className="mt-4 text-xs text-white/60">
+                Plan no disponible para suscripción onchain todavía.
+              </p>
+            )}
           </div>
         ))}
       </div>
