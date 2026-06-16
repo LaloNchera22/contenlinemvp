@@ -159,6 +159,8 @@ CREATE TABLE IF NOT EXISTS api_key_usage (
 
 CREATE INDEX IF NOT EXISTS idx_api_key_usage_window
   ON api_key_usage (api_key_id, created_at DESC);
+-- Acelera la búsqueda de nonces vencidos y su limpieza (evita degradación y enumeración).
+CREATE INDEX IF NOT EXISTS idx_auth_nonces_expires_at ON auth_nonces (expires_at);
 CREATE INDEX IF NOT EXISTS idx_transactions_creator ON transactions (creator_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_lookup
   ON subscriptions (subscriber_wallet, creator_id, active);
@@ -272,4 +274,14 @@ LANGUAGE sql
 SECURITY DEFINER
 AS $$
   UPDATE api_keys SET calls_count = calls_count + 1 WHERE id = key_id;
+$$;
+
+-- Limpieza de nonces vencidos. Programar vía cron (p. ej. pg_cron, cada hora):
+--   SELECT cron.schedule('cleanup-nonces', '0 * * * *', $$SELECT cleanup_expired_nonces()$$);
+CREATE OR REPLACE FUNCTION cleanup_expired_nonces()
+RETURNS void
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  DELETE FROM auth_nonces WHERE expires_at < now();
 $$;

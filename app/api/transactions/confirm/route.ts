@@ -76,6 +76,7 @@ export async function POST(req: NextRequest) {
   let amountRaw: bigint;
   let feeRaw: bigint;
   let fromWallet: string;
+  let recipientWallet: string;
   let description: string | null = null;
 
   if (paymentLogs.length > 0) {
@@ -86,6 +87,7 @@ export async function POST(req: NextRequest) {
     amountRaw = ev.amount;
     feeRaw = ev.fee;
     fromWallet = ev.from;
+    recipientWallet = ev.to;
     description = `session:${ev.sessionId}`;
   } else if (subLogs.length > 0) {
     const ev = subLogs[0].args as {
@@ -95,9 +97,19 @@ export async function POST(req: NextRequest) {
     amountRaw = ev.amount;
     feeRaw = ev.fee;
     fromWallet = ev.subscriber;
+    recipientWallet = ev.creator;
     description = `plan:${ev.planId.toString()}`;
   } else {
     return NextResponse.json({ error: 'No se encontró evento esperado' }, { status: 400 });
+  }
+
+  // El destinatario onchain DEBE ser la wallet del usuario autenticado.
+  // Sin esto, cualquiera podría reclamar (y acreditarse) el pago hecho a otro creador.
+  if (recipientWallet.toLowerCase() !== session.wallet.toLowerCase()) {
+    return NextResponse.json(
+      { error: 'La transacción no fue dirigida a tu wallet' },
+      { status: 403 },
+    );
   }
 
   // USDC tiene 6 decimales.

@@ -71,8 +71,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Firma inválida' }, { status: 401 });
   }
 
-  // 3. Invalidar nonce inmediatamente (one-time use).
-  await admin.from('auth_nonces').update({ used: true }).eq('nonce', nonce);
+  // 3. Invalidar nonce de forma atómica (compare-and-swap): solo el request
+  //    que logra pasar used=false → used=true continúa. Esto cierra el race
+  //    condition de dos requests paralelos con el mismo nonce.
+  const { data: consumed } = await admin
+    .from('auth_nonces')
+    .update({ used: true })
+    .eq('nonce', nonce)
+    .eq('used', false)
+    .select('nonce');
+
+  if (!consumed || consumed.length === 0) {
+    return NextResponse.json({ error: 'Nonce ya utilizado' }, { status: 401 });
+  }
 
   // 4. Crear o recuperar usuario.
   let { data: user } = await admin
