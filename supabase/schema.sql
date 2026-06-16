@@ -325,6 +325,42 @@ BEGIN
 END;
 $$;
 
+-- Creación de nonce con límite por wallet (anti-spam / anti-enumeración).
+-- /api/auth/nonce no requiere autenticación previa, así que sin un tope cualquiera
+-- podría inundar auth_nonces con millones de filas. Un advisory lock por wallet
+-- serializa el conteo + inserción, y rechazamos si ya hay demasiados nonces
+-- activos (no usados y no vencidos) para esa wallet.
+CREATE OR REPLACE FUNCTION create_auth_nonce(
+  p_nonce      TEXT,
+  p_wallet     TEXT,
+  p_expires_at TIMESTAMPTZ,
+  p_max_active INT
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  c INT;
+BEGIN
+  PERFORM pg_advisory_xact_lock(hashtext(p_wallet));
+
+  SELECT count(*) INTO c
+  FROM auth_nonces
+  WHERE wallet = p_wallet
+    AND used = false
+    AND expires_at > now();
+
+  IF c >= p_max_active THEN
+    RETURN false;
+  END IF;
+
+  INSERT INTO auth_nonces(nonce, wallet, expires_at, used)
+    VALUES (p_nonce, p_wallet, p_expires_at, false);
+  RETURN true;
+END;
+$$;
+
 -- Limpieza de nonces vencidos.
 CREATE OR REPLACE FUNCTION cleanup_expired_nonces()
 RETURNS void

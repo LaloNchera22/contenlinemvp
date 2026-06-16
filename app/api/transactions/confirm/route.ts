@@ -19,6 +19,14 @@ const CATEGORY_BY_INDEX: Record<number, FeeCategory> = {
   2: 'onchain',
 };
 
+// UUID v4 estricto: el sessionId de un PaymentCompleted llega desde el evento
+// onchain y luego se consulta en DB.
+const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+// Máximo monto crudo por transacción (100k USDC en micro-USDC). Number(bigint)
+// pierde precisión por encima de 2^53; acotamos antes de convertir.
+const MAX_AMOUNT_RAW = 100_000n * 1_000_000n;
+
 /**
  * POST /api/transactions/confirm
  * body: { txHash, category? }
@@ -91,6 +99,32 @@ export async function POST(req: NextRequest) {
     const ev = paymentLogs[0].args as {
       from: string; to: string; sessionId: string; amount: bigint; fee: bigint; category: number;
     };
+
+    // El sessionId proviene del evento onchain: validar UUID v4 antes de usarlo.
+    if (!UUID_V4.test(ev.sessionId)) {
+      return NextResponse.json({ error: 'sessionId inválido' }, { status: 400 });
+    }
+
+    // El monto es un parámetro que el caller controla en el contrato, así que no
+    // es de confianza: un atacante podría pagar 1 micro-USDC por un curso de 500.
+    // La payment session en Supabase es la fuente de verdad del monto esperado;
+    // exigimos que exista y que el monto onchain coincida exactamente.
+    const { data: paymentSession } = await admin
+      .from('payment_sessions')
+      .select('id, amount_usdc')
+      .eq('id', ev.sessionId)
+      .maybeSingle();
+    if (!paymentSession) {
+      return NextResponse.json({ error: 'Sesión de pago no encontrada' }, { status: 400 });
+    }
+    const expectedRaw = BigInt(Math.round(Number(paymentSession.amount_usdc) * 1e6));
+    if (ev.amount !== expectedRaw) {
+      return NextResponse.json(
+        { error: 'El monto onchain no coincide con la sesión de pago' },
+        { status: 400 },
+      );
+    }
+
     category = CATEGORY_BY_INDEX[Number(ev.category)] ?? 'onchain';
     amountRaw = ev.amount;
     feeRaw = ev.fee;
@@ -118,6 +152,12 @@ export async function POST(req: NextRequest) {
       { error: 'La transacción no fue dirigida a tu wallet' },
       { status: 403 },
     );
+  }
+
+  // Acotar el monto crudo antes de convertir: Number(bigint) pierde precisión
+  // por encima de 2^53 y corrompería silenciosamente los registros financieros.
+  if (amountRaw > MAX_AMOUNT_RAW || feeRaw > MAX_AMOUNT_RAW) {
+    return NextResponse.json({ error: 'Monto fuera de rango' }, { status: 400 });
   }
 
   // USDC tiene 6 decimales.

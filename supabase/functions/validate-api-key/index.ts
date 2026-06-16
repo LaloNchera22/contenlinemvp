@@ -39,23 +39,28 @@ Deno.serve(async (req: Request) => {
 
   if (!key) return json({ error: 'API key inválida' }, 401);
 
-  const windowStart = new Date(Date.now() - WINDOW_MS).toISOString();
-  const { count } = await admin
-    .from('api_key_usage')
-    .select('id', { count: 'exact', head: true })
-    .eq('api_key_id', key.id)
-    .gte('created_at', windowStart);
-
   const body = await req.json().catch(() => ({}));
   const endpoint = body.endpoint ?? 'unknown';
   const ip = req.headers.get('x-forwarded-for') ?? null;
 
-  if ((count ?? 0) >= RATE_LIMIT) {
-    await admin.from('api_key_usage').insert({ api_key_id: key.id, endpoint, ip, response_code: 429 });
+  // Rate limiting ATÓMICO: el chequeo del límite y el registro del uso ocurren en
+  // una sola función SQL con advisory lock por key (igual que lib/validateApiKey.ts).
+  // El patrón anterior (SELECT count + INSERT separados) tenía una race condition:
+  // bajo concurrencia, N requests leían el mismo count y pasaban todas el límite.
+  const { data: rl } = await admin
+    .rpc('check_and_log_api_usage', {
+      p_key_id: key.id,
+      p_endpoint: endpoint,
+      p_ip: ip,
+      p_limit: RATE_LIMIT,
+      p_window_seconds: WINDOW_MS / 1000,
+    })
+    .maybeSingle<{ allowed: boolean; request_count: number }>();
+
+  if (rl && !rl.allowed) {
     return json({ error: 'Rate limit excedido' }, 429);
   }
 
-  await admin.from('api_key_usage').insert({ api_key_id: key.id, endpoint, ip, response_code: 200 });
   await admin.rpc('increment_api_key_calls', { key_id: key.id });
   await admin.from('api_keys').update({ last_used_at: new Date().toISOString() }).eq('id', key.id);
 
