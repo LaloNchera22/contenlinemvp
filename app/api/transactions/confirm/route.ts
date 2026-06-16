@@ -69,8 +69,16 @@ export async function POST(req: NextRequest) {
   }
 
   // 3. Decodificar evento esperado.
-  const paymentLogs = parseEventLogs({ abi: PAYMENT_EVENT_ABI, logs: receipt.logs });
-  const subLogs = parseEventLogs({ abi: SUBSCRIPTION_EVENT_ABI, logs: receipt.logs });
+  //    Solo consideramos logs EMITIDOS por el contrato whitelisteado (receipt.to).
+  //    parseEventLogs decodifica cualquier log cuya firma coincida, sin importar
+  //    quién lo emitió; sin este filtro, un contrato malicioso involucrado en la
+  //    misma tx podría inyectar un PaymentCompleted/Subscribed falso con un `to`
+  //    y `amount` arbitrarios y acreditarse pagos que nunca ocurrieron.
+  const contractLogs = receipt.logs.filter(
+    (log) => log.address.toLowerCase() === receipt.to!.toLowerCase(),
+  );
+  const paymentLogs = parseEventLogs({ abi: PAYMENT_EVENT_ABI, logs: contractLogs });
+  const subLogs = parseEventLogs({ abi: SUBSCRIPTION_EVENT_ABI, logs: contractLogs });
 
   let category: FeeCategory;
   let amountRaw: bigint;
