@@ -24,13 +24,32 @@ describe('Contenline contracts', () => {
     await usdc.mint(subscriber.address, amount);
     await usdc.connect(subscriber).approve(await sub.getAddress(), amount);
 
-    await sub.connect(subscriber).subscribe(creator.address, 1, 30, amount);
+    // El creador registra el plan onchain (precio y duración no los elige el suscriptor).
+    await sub.connect(creator).setPlan(1, amount, 30, true);
+    await sub.connect(subscriber).subscribe(creator.address, 1);
 
     expect(await usdc.balanceOf(creator.address)).to.equal(90_000_000n); // 90%
     expect(await usdc.balanceOf(feeRecipient.address)).to.equal(10_000_000n); // 10%
 
     const [active] = await sub.isSubscribed(subscriber.address, creator.address);
     expect(active).to.equal(true);
+  });
+
+  it('ContenlineSubscription rechaza suscripción a plan inexistente/inactivo', async () => {
+    const [, creator, subscriber, feeRecipient] = await ethers.getSigners();
+    const usdc = await deployMockUsdc();
+
+    const Subscription = await ethers.getContractFactory('ContenlineSubscription');
+    const sub = await Subscription.deploy(await usdc.getAddress(), feeRecipient.address);
+    await sub.waitForDeployment();
+
+    await usdc.mint(subscriber.address, 100_000_000n);
+    await usdc.connect(subscriber).approve(await sub.getAddress(), 100_000_000n);
+
+    // Sin plan registrado: no se puede suscribir por un monto arbitrario.
+    await expect(
+      sub.connect(subscriber).subscribe(creator.address, 1),
+    ).to.be.revertedWith('plan inactive');
   });
 
   it('ContenlinePayment previene replay del mismo sessionId', async () => {

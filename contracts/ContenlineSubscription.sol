@@ -24,6 +24,25 @@ contract ContenlineSubscription is ReentrancyGuard, Ownable {
     // subscriber => creator => expiración (timestamp)
     mapping(address => mapping(address => uint256)) public expiresAt;
 
+    // Registro de planes onchain. El creador define precio y duración; el
+    // suscriptor NO puede elegir el monto. Esto evita que un atacante llame al
+    // contrato con amount=1 y obtenga la suscripción por casi nada.
+    struct Plan {
+        uint256 price; // USDC (6 decimales)
+        uint256 durationDays;
+        bool active;
+    }
+
+    // creator => planId => Plan
+    mapping(address => mapping(uint256 => Plan)) public plans;
+
+    event PlanSet(
+        address indexed creator,
+        uint256 indexed planId,
+        uint256 price,
+        uint256 durationDays,
+        bool active
+    );
     event Subscribed(
         address indexed subscriber,
         address indexed creator,
@@ -42,22 +61,39 @@ contract ContenlineSubscription is ReentrancyGuard, Ownable {
     }
 
     /**
-     * @notice Suscribe a `creator` por `durationDays`. Requiere allowance previo de USDC.
-     * @param creator      wallet del creador
-     * @param planId       id del plan (vincula con Supabase)
-     * @param durationDays duración en días
-     * @param amount       monto total en USDC (6 decimales)
+     * @notice El creador registra/actualiza uno de sus planes (precio y duración).
+     *         Solo `msg.sender` puede definir planes para sí mismo.
+     * @param planId        id del plan (vincula con Supabase)
+     * @param price         monto total en USDC (6 decimales)
+     * @param durationDays  duración en días
+     * @param active        si el plan acepta suscripciones
      */
-    function subscribe(
-        address creator,
+    function setPlan(
         uint256 planId,
+        uint256 price,
         uint256 durationDays,
-        uint256 amount
-    ) external nonReentrant {
-        require(creator != address(0), "invalid creator");
-        require(amount > 0, "amount=0");
+        bool active
+    ) external {
+        require(price > 0, "price=0");
         require(durationDays > 0, "duration=0");
+        plans[msg.sender][planId] = Plan(price, durationDays, active);
+        emit PlanSet(msg.sender, planId, price, durationDays, active);
+    }
 
+    /**
+     * @notice Suscribe a `creator` al plan `planId`. Requiere allowance previo de USDC.
+     *         El monto y la duración se leen del plan registrado onchain; el
+     *         suscriptor NO los controla. Requiere que el plan exista y esté activo.
+     * @param creator wallet del creador
+     * @param planId  id del plan (vincula con Supabase)
+     */
+    function subscribe(address creator, uint256 planId) external nonReentrant {
+        require(creator != address(0), "invalid creator");
+
+        Plan memory plan = plans[creator][planId];
+        require(plan.active, "plan inactive");
+
+        uint256 amount = plan.price;
         uint256 fee = (amount * feeBps) / BPS_DENOMINATOR;
         uint256 net = amount - fee;
 
@@ -70,7 +106,7 @@ contract ContenlineSubscription is ReentrancyGuard, Ownable {
         // Extiende desde el mayor entre ahora y la expiración actual.
         uint256 current = expiresAt[msg.sender][creator];
         uint256 base = current > block.timestamp ? current : block.timestamp;
-        uint256 newExpiry = base + (durationDays * 1 days);
+        uint256 newExpiry = base + (plan.durationDays * 1 days);
         expiresAt[msg.sender][creator] = newExpiry;
 
         emit Subscribed(msg.sender, creator, planId, amount, fee, newExpiry);

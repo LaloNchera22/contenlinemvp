@@ -52,7 +52,13 @@ export function verifySupabaseJwt(token: string): (SessionClaims & { exp: number
   const expected = base64url(
     crypto.createHmac('sha256', secret).update(`${encodedHeader}.${encodedPayload}`).digest(),
   );
-  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+  const sig = Buffer.from(signature);
+  const exp = Buffer.from(expected);
+  // timingSafeEqual lanza un TypeError si los buffers difieren en longitud.
+  // Una firma de longitud distinta provocaría un 500 (fuga de información) en
+  // lugar de un 401; comparamos longitudes primero y devolvemos null (no válido).
+  if (sig.length !== exp.length) return null;
+  if (!crypto.timingSafeEqual(sig, exp)) {
     return null;
   }
 

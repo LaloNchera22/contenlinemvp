@@ -9,11 +9,20 @@ export const CONTRACTS = {
 };
 
 export function isWhitelistedContract(address: string): boolean {
+  const whitelist = [CONTRACTS.subscription, CONTRACTS.payment].filter(Boolean);
+
+  // Fallar ruidosamente en vez de silenciosamente: una whitelist vacía
+  // significa que el entorno no está configurado. Rechazar todo en ese estado
+  // es correcto, pero debe ser un error explícito (500) y no un "contrato no
+  // autorizado" (400) engañoso que oculte un despliegue mal configurado.
+  if (whitelist.length === 0) {
+    throw new Error(
+      'Whitelist de contratos vacía: configura NEXT_PUBLIC_CONTRACT_SUBSCRIPTION y NEXT_PUBLIC_CONTRACT_PAYMENT',
+    );
+  }
+
   const target = address.toLowerCase();
-  return [CONTRACTS.subscription, CONTRACTS.payment]
-    .filter(Boolean)
-    .map((a) => a.toLowerCase())
-    .includes(target);
+  return whitelist.map((a) => a.toLowerCase()).includes(target);
 }
 
 /** ABI mínima de los eventos que verificamos onchain. */
