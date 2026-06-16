@@ -46,20 +46,37 @@ export async function validateApiKey(
     return { ok: false, status: 401, error: 'API key inválida o revocada' };
   }
 
-  // Rate limiting por ventana de 1 minuto.
-  const windowStart = new Date(Date.now() - WINDOW_MS).toISOString();
-  const { count } = await admin
-    .from('api_key_usage')
-    .select('id', { count: 'exact', head: true })
-    .eq('api_key_id', key.id)
-    .gte('created_at', windowStart);
+  // Rate limiting ATÓMICO: el chequeo del límite y el registro del uso ocurren
+  // en una sola función SQL con advisory lock por key, evitando la race
+  // condition de leer el contador y registrar en pasos separados.
+  const { data: rl, error: rlError } = await admin
+    .rpc('check_and_log_api_usage', {
+      p_key_id: key.id,
+      p_endpoint: meta.endpoint,
+      p_ip: meta.ip ?? null,
+      p_limit: RATE_LIMIT,
+      p_window_seconds: WINDOW_MS / 1000,
+    })
+    .maybeSingle<{ allowed: boolean; request_count: number }>();
 
-  if ((count ?? 0) >= RATE_LIMIT) {
-    await logUsage(admin, key.id, meta, 429);
+  if (rlError) {
+    // Fallback no atómico si la función aún no está desplegada (no bloqueamos
+    // la API por un schema desactualizado, pero registramos el uso igual).
+    const windowStart = new Date(Date.now() - WINDOW_MS).toISOString();
+    const { count } = await admin
+      .from('api_key_usage')
+      .select('id', { count: 'exact', head: true })
+      .eq('api_key_id', key.id)
+      .gte('created_at', windowStart);
+    if ((count ?? 0) >= RATE_LIMIT) {
+      await logUsage(admin, key.id, meta, 429);
+      return { ok: false, status: 429, error: 'Rate limit excedido (100/min)' };
+    }
+    await logUsage(admin, key.id, meta, 200);
+  } else if (rl && !rl.allowed) {
     return { ok: false, status: 429, error: 'Rate limit excedido (100/min)' };
   }
 
-  await logUsage(admin, key.id, meta, 200);
   await admin
     .from('api_keys')
     .update({ last_used_at: new Date().toISOString() })

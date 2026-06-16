@@ -34,14 +34,35 @@ Deno.serve(async () => {
   });
   const contract = Deno.env.get('CONTRACT_SUBSCRIPTION') as `0x${string}`;
 
-  // Suscripciones que la DB cree activas pero ya vencidas, o por revalidar.
-  const { data: subs } = await admin
-    .from('subscriptions')
-    .select('id, subscriber_wallet, creator_id, expires_at, active')
-    .eq('active', true);
+  // Paginar para no cargar todas las suscripciones en memoria de una Edge
+  // Function (límite de CPU ~150ms). Priorizamos las que ya vencieron o están
+  // a punto de vencer (próximas 2h), que son las que de verdad hay que revalidar.
+  const PAGE_SIZE = 100;
+  const horizon = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+  type Sub = {
+    id: string;
+    subscriber_wallet: string;
+    creator_id: string;
+    expires_at: string;
+    active: boolean;
+  };
+  const subs: Sub[] = [];
+  for (let page = 0; ; page++) {
+    const from = page * PAGE_SIZE;
+    const { data: batch } = await admin
+      .from('subscriptions')
+      .select('id, subscriber_wallet, creator_id, expires_at, active')
+      .eq('active', true)
+      .lt('expires_at', horizon)
+      .order('expires_at', { ascending: true })
+      .range(from, from + PAGE_SIZE - 1);
+    if (!batch || batch.length === 0) break;
+    subs.push(...(batch as Sub[]));
+    if (batch.length < PAGE_SIZE) break;
+  }
 
   // Resolver wallet del creador.
-  const creatorIds = [...new Set((subs ?? []).map((s) => s.creator_id))];
+  const creatorIds = [...new Set(subs.map((s) => s.creator_id))];
   const { data: creators } = await admin
     .from('users')
     .select('id, wallet')
@@ -49,7 +70,7 @@ Deno.serve(async () => {
   const walletById = new Map((creators ?? []).map((c) => [c.id, c.wallet]));
 
   let updated = 0;
-  for (const s of subs ?? []) {
+  for (const s of subs) {
     const creatorWallet = walletById.get(s.creator_id);
     if (!creatorWallet) continue;
 
@@ -74,7 +95,7 @@ Deno.serve(async () => {
     }
   }
 
-  return new Response(JSON.stringify({ synced: subs?.length ?? 0, updated }), {
+  return new Response(JSON.stringify({ synced: subs.length, updated }), {
     headers: { 'Content-Type': 'application/json' },
   });
 });

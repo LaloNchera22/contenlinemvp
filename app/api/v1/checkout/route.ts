@@ -6,6 +6,12 @@ export const runtime = 'nodejs';
 
 const SESSION_TTL_MS = 30 * 60 * 1000; // 30 min
 
+// Categorías permitidas para el checkout externo. NO incluye 'subscription':
+// las suscripciones (fee 10%) se crean por su propio flujo, no por esta API.
+// Sin esta lista un developer podría forzar una categoría con fee distinto.
+const ALLOWED_CATEGORIES = ['onchain', 'course', 'service'] as const;
+type CheckoutCategory = (typeof ALLOWED_CATEGORIES)[number];
+
 /**
  * POST /api/v1/checkout  (API pública — requiere Bearer sk_prod_xxx / sk_test_xxx)
  * Crea una payment session embebible que el comprador completará onchain.
@@ -35,7 +41,13 @@ export async function POST(req: NextRequest) {
   if (!Number.isFinite(amount) || amount <= 0) {
     return NextResponse.json({ error: 'amount_usdc inválido' }, { status: 400 });
   }
-  const category = body.category ?? 'onchain';
+  const category = (body.category ?? 'onchain') as CheckoutCategory;
+  if (!ALLOWED_CATEGORIES.includes(category)) {
+    return NextResponse.json(
+      { error: `category inválida; permitidas: ${ALLOWED_CATEGORIES.join(', ')}` },
+      { status: 400 },
+    );
+  }
 
   const admin = createAdminClient();
 
@@ -46,11 +58,17 @@ export async function POST(req: NextRequest) {
     .eq('id', auth.key.id)
     .single();
 
+  // Sin user_id no podemos atribuir la sesión a un creador; fallar antes de
+  // insertar una fila con creator_id null que rompería las políticas RLS.
+  if (!keyRow?.user_id) {
+    return NextResponse.json({ error: 'API key sin usuario asociado' }, { status: 500 });
+  }
+
   const { data: session, error } = await admin
     .from('payment_sessions')
     .insert({
       api_key_id: auth.key.id,
-      creator_id: keyRow?.user_id,
+      creator_id: keyRow.user_id,
       amount_usdc: amount,
       category,
       description: body.description ?? null,

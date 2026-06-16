@@ -1,7 +1,16 @@
 /** @type {import('next').NextConfig} */
 
+// NOTA DE SEGURIDAD (CSP script-src):
+//  - 'unsafe-eval' lo exige WalletConnect/RainbowKit en runtime; quitarlo rompe
+//    la conexión de wallets.
+//  - 'unsafe-inline' es el punto débil (abre la puerta a XSS). El endurecimiento
+//    correcto es CSP basada en nonce por request vía middleware de Next 14
+//    (genera un nonce, lo inyecta en este header y en los <script>), eliminando
+//    'unsafe-inline'. Es un cambio que debe validarse contra el flujo de
+//    RainbowKit antes de activarlo en producción; se deja marcado aquí.
 const ContentSecurityPolicy = [
   "default-src 'self'",
+  // TODO(seguridad): migrar a nonce y eliminar 'unsafe-inline'.
   "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",

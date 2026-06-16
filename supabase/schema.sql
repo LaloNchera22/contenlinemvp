@@ -181,11 +181,21 @@ ALTER TABLE services            ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payment_sessions    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE api_key_usage       ENABLE ROW LEVEL SECURITY;
 
--- Users: solo puede ver/editar su propio perfil; perfiles públicos legibles aparte.
-CREATE POLICY "users_own_profile" ON users
-  FOR ALL USING (wallet = auth.jwt() ->> 'wallet');
+-- Users: lectura pública INTENCIONAL de perfiles (username, display_name, wallet,
+-- avatar son datos públicos del creador). La escritura queda restringida al dueño.
+-- Antes existían dos políticas FOR SELECT (una con USING wallet, otra con true)
+-- que se combinaban con OR; eso hacía inútil la primera. Ahora la lectura pública
+-- es una única política explícita y la escritura se separa con WITH CHECK para
+-- impedir que alguien cree/edite/borre un perfil ajeno.
 CREATE POLICY "users_public_read" ON users
   FOR SELECT USING (true);
+CREATE POLICY "users_insert_own" ON users
+  FOR INSERT WITH CHECK (wallet = auth.jwt() ->> 'wallet');
+CREATE POLICY "users_update_own" ON users
+  FOR UPDATE USING (wallet = auth.jwt() ->> 'wallet')
+  WITH CHECK (wallet = auth.jwt() ->> 'wallet');
+CREATE POLICY "users_delete_own" ON users
+  FOR DELETE USING (wallet = auth.jwt() ->> 'wallet');
 
 -- Transactions: creador solo ve las suyas
 CREATE POLICY "creator_own_transactions" ON transactions
@@ -276,12 +286,63 @@ AS $$
   UPDATE api_keys SET calls_count = calls_count + 1 WHERE id = key_id;
 $$;
 
--- Limpieza de nonces vencidos. Programar vía cron (p. ej. pg_cron, cada hora):
---   SELECT cron.schedule('cleanup-nonces', '0 * * * *', $$SELECT cleanup_expired_nonces()$$);
+-- Rate limiting ATÓMICO por API key.
+-- Antes el chequeo (SELECT count) y el registro (INSERT) eran dos pasos
+-- separados: bajo concurrencia, N requests podían leer el mismo count y pasar
+-- todos el límite. Aquí un advisory lock por key serializa el conteo + inserción
+-- dentro de la misma transacción, cerrando la race condition.
+CREATE OR REPLACE FUNCTION check_and_log_api_usage(
+  p_key_id   UUID,
+  p_endpoint TEXT,
+  p_ip       TEXT,
+  p_limit    INT,
+  p_window_seconds INT
+)
+RETURNS TABLE(allowed BOOLEAN, request_count INT)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  c INT;
+BEGIN
+  -- Serializa las requests concurrentes de la misma key durante esta tx.
+  PERFORM pg_advisory_xact_lock(hashtext(p_key_id::text));
+
+  SELECT count(*) INTO c
+  FROM api_key_usage
+  WHERE api_key_id = p_key_id
+    AND created_at >= now() - make_interval(secs => p_window_seconds);
+
+  IF c >= p_limit THEN
+    INSERT INTO api_key_usage(api_key_id, endpoint, ip, response_code)
+      VALUES (p_key_id, p_endpoint, p_ip, 429);
+    RETURN QUERY SELECT false, c;
+  ELSE
+    INSERT INTO api_key_usage(api_key_id, endpoint, ip, response_code)
+      VALUES (p_key_id, p_endpoint, p_ip, 200);
+    RETURN QUERY SELECT true, c + 1;
+  END IF;
+END;
+$$;
+
+-- Limpieza de nonces vencidos.
 CREATE OR REPLACE FUNCTION cleanup_expired_nonces()
 RETURNS void
 LANGUAGE sql
 SECURITY DEFINER
 AS $$
   DELETE FROM auth_nonces WHERE expires_at < now();
+$$;
+
+-- Programación automática de la limpieza de nonces (evita el crecimiento
+-- indefinido de auth_nonces). Requiere la extensión pg_cron, disponible en
+-- Supabase. El bloque es idempotente: re-crea el schedule si ya existía.
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'cleanup-nonces') THEN
+    PERFORM cron.unschedule('cleanup-nonces');
+  END IF;
+  PERFORM cron.schedule('cleanup-nonces', '0 * * * *', 'SELECT cleanup_expired_nonces()');
+END;
 $$;
