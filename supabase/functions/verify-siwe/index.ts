@@ -8,6 +8,11 @@ import { createPublicClient, http, getAddress } from 'https://esm.sh/viem@2';
 import { polygon } from 'https://esm.sh/viem@2/chains';
 import { create as createJwt } from 'https://deno.land/x/djwt@v3.0.2/mod.ts';
 
+// Debe coincidir con NONCE_TTL_MS en lib/siwe.ts (5 minutos). expires_at se
+// derivó de issuedAt + NONCE_TTL_MS al emitir el nonce, así que reconstruimos
+// issuedAt restando el TTL.
+const NONCE_TTL_MS = 5 * 60 * 1000;
+
 function buildMessage(nonce: string, issuedAt: string, expiresAt: string): string {
   return [
     'Contenline quiere que inicies sesión con tu cuenta de Ethereum.',
@@ -41,7 +46,12 @@ Deno.serve(async (req: Request) => {
   if (getAddress(row.wallet) !== address) return json({ error: 'Wallet no coincide' }, 401);
   if (new Date(row.expires_at) < new Date()) return json({ error: 'Nonce expirado' }, 401);
 
-  const message = buildMessage(nonce, row.created_at, row.expires_at);
+  // El `issuedAt` debe ser EXACTAMENTE el usado al construir el mensaje en
+  // /api/auth/nonce, no `created_at` (DEFAULT now() de la BD, que difiere en
+  // milisegundos y haría que la firma nunca coincidiera).
+  const expiresAt = new Date(row.expires_at);
+  const issuedAt = new Date(expiresAt.getTime() - NONCE_TTL_MS);
+  const message = buildMessage(nonce, issuedAt.toISOString(), row.expires_at);
   const valid = await client.verifyMessage({ address, message, signature });
   if (!valid) return json({ error: 'Firma inválida' }, 401);
 

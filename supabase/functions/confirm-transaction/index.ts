@@ -36,6 +36,17 @@ Deno.serve(async (req: Request) => {
     transport: http(Deno.env.get('POLYGON_RPC_URL')),
   });
 
+  // Fallar ruidosamente si la whitelist está vacía: significa que el entorno no
+  // está configurado (faltan CONTRACT_SUBSCRIPTION/CONTRACT_PAYMENT). Sin este
+  // guard, WHITELIST.includes() siempre daría false y devolveríamos un engañoso
+  // "Contrato no autorizado" (400) que ocultaría un deploy mal configurado.
+  if (WHITELIST.length === 0) {
+    return json(
+      { error: 'Whitelist de contratos vacía: configura CONTRACT_SUBSCRIPTION y CONTRACT_PAYMENT' },
+      500,
+    );
+  }
+
   const { txHash } = await req.json().catch(() => ({}));
   if (!txHash || !/^0x[0-9a-fA-F]{64}$/.test(txHash)) {
     return json({ error: 'txHash inválido' }, 400);

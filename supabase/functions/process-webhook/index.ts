@@ -92,7 +92,11 @@ Deno.serve(async (req: Request) => {
     timestamp: new Date().toISOString(),
   });
 
-  const secret = Deno.env.get('WEBHOOK_SIGNING_SECRET') ?? 'dev-secret';
+  // Sin fallback: un secreto por defecto en producción permitiría a cualquiera
+  // forjar webhooks válidos. Si no está configurado, abortamos en vez de firmar
+  // con un secreto conocido.
+  const secret = Deno.env.get('WEBHOOK_SIGNING_SECRET');
+  if (!secret) return json({ error: 'WEBHOOK_SIGNING_SECRET no configurado' }, 500);
   const signature = await hmacSha256(secret, payload);
 
   let delivered = false;
