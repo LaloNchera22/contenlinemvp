@@ -11,6 +11,13 @@ const WHITELIST = [
   Deno.env.get('CONTRACT_PAYMENT')?.toLowerCase(),
 ].filter(Boolean);
 
+// UUID v4 estricto: sessionId viene del evento onchain y se usa en consultas.
+const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+// Máximo monto crudo por transacción (100k USDC en micro-USDC) para evitar la
+// pérdida de precisión de Number(bigint) por encima de 2^53.
+const MAX_AMOUNT_RAW = 100_000n * 1_000_000n;
+
 const PAYMENT_ABI = [
   {
     type: 'event',
@@ -79,6 +86,38 @@ Deno.serve(async (req: Request) => {
   const ev = logs[0].args as {
     from: string; to: string; sessionId: string; amount: bigint; fee: bigint; category: number;
   };
+
+  // El sessionId proviene del evento onchain. Validar que sea un UUID v4 antes
+  // de usarlo en cualquier consulta evita errores de DB sin manejar (stack trace
+  // expuesto) y cierra cualquier vector de inyección a futuro.
+  if (!UUID_V4.test(ev.sessionId)) {
+    return json({ error: 'sessionId inválido' }, 400);
+  }
+
+  // Límite de monto: Number(bigint) pierde precisión por encima de 2^53. Acotar
+  // el monto crudo a un máximo razonable por transacción evita registros
+  // financieros silenciosamente corruptos (y deja margen para tokens de 18
+  // decimales en el futuro).
+  if (ev.amount > MAX_AMOUNT_RAW || ev.fee > MAX_AMOUNT_RAW) {
+    return json({ error: 'Monto fuera de rango' }, 400);
+  }
+
+  // El monto NO es de confianza: el contrato lo recibe como parámetro del caller,
+  // así que un atacante podría pagar 1 micro-USDC por un curso de 500. La sesión
+  // de pago en Supabase es la fuente de verdad del monto esperado; exigimos que
+  // exista y que el monto onchain coincida exactamente (en micro-USDC) con ella.
+  const { data: paymentSession } = await admin
+    .from('payment_sessions')
+    .select('id, amount_usdc, status')
+    .eq('id', ev.sessionId)
+    .maybeSingle();
+  if (!paymentSession) {
+    return json({ error: 'Sesión de pago no encontrada' }, 400);
+  }
+  const expectedRaw = BigInt(Math.round(Number(paymentSession.amount_usdc) * 1e6));
+  if (ev.amount !== expectedRaw) {
+    return json({ error: 'El monto onchain no coincide con la sesión de pago' }, 400);
+  }
 
   // El creador se DERIVA del destinatario onchain (ev.to), nunca del body.
   // Así un developer no puede redirigir el crédito del pago a otro creador.

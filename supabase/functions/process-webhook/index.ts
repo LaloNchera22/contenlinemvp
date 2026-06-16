@@ -4,6 +4,11 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+// NOTA: lógica idéntica a lib/webhook.ts (mismo isSafeWebhookUrl +
+// isPrivateOrReservedIp). Se mantiene una copia porque las Edge Functions no
+// comparten el bundle de Next; cualquier cambio debe replicarse en ambos. La
+// estructura se mantiene espejo (delegando en isPrivateOrReservedIp) para evitar
+// divergencias sutiles entre las dos versiones.
 function isSafeWebhookUrl(raw: string): boolean {
   if (raw.length === 0 || raw.length > 2048) return false;
   let url: URL;
@@ -13,6 +18,7 @@ function isSafeWebhookUrl(raw: string): boolean {
     return false;
   }
   if (url.protocol !== 'https:') return false;
+
   const host = url.hostname.toLowerCase();
   if (
     host === 'localhost' ||
@@ -23,24 +29,34 @@ function isSafeWebhookUrl(raw: string): boolean {
   ) {
     return false;
   }
+
+  if (isPrivateOrReservedIp(host)) return false;
+  return true;
+}
+
+function isPrivateOrReservedIp(host: string): boolean {
+  // IPv6: rechazar loopback (::1), link-local (fe80::), ULA (fc00::/7) y mapeadas.
   if (host.includes(':')) {
     const h = host.replace(/^\[|\]$/g, '');
-    if (h === '::1' || h === '::' || /^fe80:/i.test(h) || /^f[cd][0-9a-f]{2}:/i.test(h)) {
-      return false;
-    }
-    return true;
+    if (h === '::1' || h === '::') return true;
+    if (/^fe80:/i.test(h) || /^f[cd][0-9a-f]{2}:/i.test(h)) return true;
+    return false;
   }
+
   const octets = host.split('.');
-  if (octets.length !== 4) return true; // hostname, no IPv4 literal
+  if (octets.length !== 4) return false; // no es IPv4 → es un hostname
   const nums = octets.map((o) => Number(o));
-  if (nums.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) return true;
+  if (nums.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) return false;
+
   const [a, b] = nums;
-  if (a === 10 || a === 127 || a === 0) return false;
-  if (a === 172 && b >= 16 && b <= 31) return false;
-  if (a === 192 && b === 168) return false;
-  if (a === 169 && b === 254) return false;
-  if (a === 100 && b >= 64 && b <= 127) return false;
-  return true;
+  if (a === 10) return true; // 10.0.0.0/8
+  if (a === 127) return true; // loopback
+  if (a === 0) return true; // 0.0.0.0/8
+  if (a === 172 && b >= 16 && b <= 31) return true; // 172.16.0.0/12
+  if (a === 192 && b === 168) return true; // 192.168.0.0/16
+  if (a === 169 && b === 254) return true; // link-local + metadata cloud
+  if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT 100.64.0.0/10
+  return false;
 }
 
 async function hmacSha256(secret: string, payload: string): Promise<string> {

@@ -50,6 +50,19 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // metadata es opcional y se devuelve íntegra en el webhook. Sin un tope, un
+  // developer podría enviar megabytes ({"a": "x".repeat(10_000_000)}) y forzar
+  // consumo excesivo de memoria al parsear/serializar y al notificar. 4KB es un
+  // límite razonable para metadata de negocio.
+  if (body.metadata !== undefined) {
+    if (typeof body.metadata !== 'object' || body.metadata === null || Array.isArray(body.metadata)) {
+      return NextResponse.json({ error: 'metadata debe ser un objeto' }, { status: 400 });
+    }
+    if (JSON.stringify(body.metadata).length > 4096) {
+      return NextResponse.json({ error: 'metadata excede el límite de 4096 bytes' }, { status: 400 });
+    }
+  }
+
   // webhook_url es opcional, pero si se envía el servidor le hará fetch luego:
   // exigimos https hacia un host público para evitar SSRF.
   if (body.webhook_url !== undefined && !isSafeWebhookUrl(body.webhook_url)) {
