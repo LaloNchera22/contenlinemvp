@@ -63,8 +63,10 @@ export function verifySupabaseJwt(token: string): (SessionClaims & { exp: number
   }
 
   try {
+    // El payload se codificó con base64url (- y _ en vez de + y /); decodificarlo
+    // como 'base64' descartaría esos caracteres y corrompería el JSON.
     const payload = JSON.parse(
-      Buffer.from(encodedPayload, 'base64').toString('utf8'),
+      Buffer.from(encodedPayload, 'base64url').toString('utf8'),
     );
     if (typeof payload.exp === 'number' && payload.exp < Math.floor(Date.now() / 1000)) {
       return null;

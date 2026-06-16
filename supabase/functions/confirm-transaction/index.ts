@@ -56,7 +56,13 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'Contrato no autorizado' }, 400);
   }
 
-  const logs = parseEventLogs({ abi: PAYMENT_ABI, logs: receipt.logs });
+  // Solo logs emitidos por el contrato whitelisteado (receipt.to). Sin este
+  // filtro un contrato malicioso en la misma tx podría inyectar un evento
+  // PaymentCompleted falso (con `to`/`amount` arbitrarios) y acreditar un pago.
+  const contractLogs = receipt.logs.filter(
+    (log) => log.address.toLowerCase() === receipt.to!.toLowerCase(),
+  );
+  const logs = parseEventLogs({ abi: PAYMENT_ABI, logs: contractLogs });
   if (logs.length === 0) return json({ error: 'Sin evento esperado' }, 400);
 
   const ev = logs[0].args as {

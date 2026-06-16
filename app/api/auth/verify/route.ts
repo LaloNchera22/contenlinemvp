@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createPublicClient, http, isAddress, getAddress } from 'viem';
 import { polygon } from 'viem/chains';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { buildSiweMessage } from '@/lib/siwe';
+import { buildSiweMessage, NONCE_TTL_MS } from '@/lib/siwe';
 import { signSupabaseJwt } from '@/lib/jwt';
 import { SESSION_COOKIE } from '@/lib/supabase/server';
 
@@ -55,11 +55,13 @@ export async function POST(req: NextRequest) {
   }
 
   // 2. Reconstruir mensaje y verificar firma onchain-agnostic con viem.
-  const message = buildSiweMessage({
-    nonce,
-    issuedAt: new Date(nonceRow.created_at),
-    expiresAt: new Date(nonceRow.expires_at),
-  });
+  //    El `issuedAt` debe ser EXACTAMENTE el que se usó al construir el mensaje
+  //    en /api/auth/nonce, no `created_at` (DEFAULT now() de la BD, que difiere
+  //    en milisegundos). Como expires_at se derivó de issuedAt + NONCE_TTL_MS,
+  //    lo reconstruimos restando el TTL para reproducir el mensaje firmado.
+  const expiresAt = new Date(nonceRow.expires_at);
+  const issuedAt = new Date(expiresAt.getTime() - NONCE_TTL_MS);
+  const message = buildSiweMessage({ nonce, issuedAt, expiresAt });
 
   const valid = await publicClient.verifyMessage({
     address,

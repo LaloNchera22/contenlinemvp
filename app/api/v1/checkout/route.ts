@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateApiKey } from '@/lib/validateApiKey';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { isSafeWebhookUrl } from '@/lib/webhook';
 
 export const runtime = 'nodejs';
 
@@ -45,6 +46,15 @@ export async function POST(req: NextRequest) {
   if (!ALLOWED_CATEGORIES.includes(category)) {
     return NextResponse.json(
       { error: `category inválida; permitidas: ${ALLOWED_CATEGORIES.join(', ')}` },
+      { status: 400 },
+    );
+  }
+
+  // webhook_url es opcional, pero si se envía el servidor le hará fetch luego:
+  // exigimos https hacia un host público para evitar SSRF.
+  if (body.webhook_url !== undefined && !isSafeWebhookUrl(body.webhook_url)) {
+    return NextResponse.json(
+      { error: 'webhook_url inválida: debe ser https hacia un host público' },
       { status: 400 },
     );
   }
