@@ -47,7 +47,9 @@ export function useSiweAuth() {
       const { token, user } = await verifyRes.json();
 
       // 4. Inyectar el JWT en el cliente Supabase (para RLS desde el browser).
-      await supabaseBrowser.auth.setSession({ access_token: token, refresh_token: token });
+      //    refresh_token vacío a propósito: nuestro JWT no es un refresh token de
+      //    Supabase. La renovación la hace refresh() contra /api/auth/refresh.
+      await supabaseBrowser.auth.setSession({ access_token: token, refresh_token: '' });
 
       return { token, user };
     } catch (e) {
@@ -58,10 +60,18 @@ export function useSiweAuth() {
     }
   }, [address, signMessageAsync]);
 
+  const refresh = useCallback(async () => {
+    const res = await fetch('/api/auth/refresh', { method: 'POST' });
+    if (!res.ok) return null;
+    const { token, user } = await res.json();
+    await supabaseBrowser.auth.setSession({ access_token: token, refresh_token: '' });
+    return { token, user };
+  }, []);
+
   const signOut = useCallback(async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     await supabaseBrowser.auth.signOut();
   }, []);
 
-  return { signIn, signOut, loading, error };
+  return { signIn, signOut, refresh, loading, error };
 }

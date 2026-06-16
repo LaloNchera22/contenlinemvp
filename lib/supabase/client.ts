@@ -12,7 +12,11 @@ export const supabaseBrowser = createClient(
   {
     auth: {
       persistSession: true,
-      autoRefreshToken: true,
+      // El JWT lo emitimos nosotros tras SIWE; NO es un par access/refresh de
+      // Supabase. Con autoRefreshToken activo, Supabase intentaría refrescar
+      // usando el access_token como refresh_token y entraría en un loop de
+      // reintentos fallidos. La renovación se hace vía /api/auth/refresh.
+      autoRefreshToken: false,
       storageKey: 'contenline-auth',
     },
   },

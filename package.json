@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "hardhat:compile": "hardhat compile",
     "hardhat:test": "hardhat test",
     "hardhat:deploy:mumbai": "hardhat run scripts/deploy.ts --network mumbai"
@@ -33,6 +34,7 @@
     "hardhat": "^2.22.13",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.13",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
   }
 }

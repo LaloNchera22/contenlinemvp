@@ -28,3 +28,20 @@ CREATE POLICY "authenticated_upload_public" ON storage.objects
 
 -- Los buckets privados (exclusive-content, course-media) NO tienen policies de SELECT:
 -- el acceso se realiza exclusivamente vía signed URLs generadas server-side con service_role.
+
+-- INSERT a buckets privados: solo service_role (la app sube vía /api/upload con
+-- el admin client, nunca directamente desde el browser). Sin estas policies ni
+-- siquiera el flujo server-side por la API REST de Storage podría escribir.
+CREATE POLICY "service_role_upload_exclusive" ON storage.objects
+  FOR INSERT TO service_role
+  WITH CHECK (bucket_id = 'exclusive-content');
+
+CREATE POLICY "service_role_upload_course" ON storage.objects
+  FOR INSERT TO service_role
+  WITH CHECK (bucket_id = 'course-media');
+
+-- service_role también gestiona (update/delete) los objetos privados.
+CREATE POLICY "service_role_manage_private" ON storage.objects
+  FOR ALL TO service_role
+  USING (bucket_id IN ('exclusive-content', 'course-media'))
+  WITH CHECK (bucket_id IN ('exclusive-content', 'course-media'));

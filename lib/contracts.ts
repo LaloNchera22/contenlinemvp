@@ -55,3 +55,57 @@ export const SUBSCRIPTION_EVENT_ABI = [
     ],
   },
 ] as const;
+
+/** ABI mínima de ERC20 para approve/allowance desde el cliente. */
+export const ERC20_ABI = [
+  {
+    type: 'function',
+    name: 'approve',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'spender', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'bool' }],
+  },
+  {
+    type: 'function',
+    name: 'allowance',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'owner', type: 'address' },
+      { name: 'spender', type: 'address' },
+    ],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+] as const;
+
+/** ABI de escritura del contrato de suscripciones (solo subscribe). */
+export const SUBSCRIPTION_WRITE_ABI = [
+  {
+    type: 'function',
+    name: 'subscribe',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'creator', type: 'address' },
+      { name: 'planId', type: 'uint256' },
+    ],
+    outputs: [],
+  },
+] as const;
+
+/** ABI de escritura del contrato de pagos únicos (solo pay). */
+export const PAYMENT_WRITE_ABI = [
+  {
+    type: 'function',
+    name: 'pay',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'creator', type: 'address' },
+      { name: 'sessionId', type: 'string' },
+      { name: 'category', type: 'uint8' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    outputs: [],
+  },
+] as const;

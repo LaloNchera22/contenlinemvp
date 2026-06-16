@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { randomBytes } from 'crypto';
 import { createPublicClient, http, isAddress, getAddress } from 'viem';
-import { polygon } from 'viem/chains';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { buildSiweMessage, NONCE_TTL_MS } from '@/lib/siwe';
 import { signSupabaseJwt } from '@/lib/jwt';
 import { SESSION_COOKIE } from '@/lib/supabase/server';
+import { getChain, getRpcUrl } from '@/lib/chain';
 
 export const runtime = 'nodejs';
 
 const publicClient = createPublicClient({
-  chain: polygon,
-  transport: http(process.env.POLYGON_RPC_URL),
+  chain: getChain(),
+  transport: http(getRpcUrl()),
 });
 
 /**
@@ -95,16 +96,43 @@ export async function POST(req: NextRequest) {
     .maybeSingle();
 
   if (!user) {
-    const shortWallet = address.slice(2, 8).toLowerCase();
-    const { data: created, error: createErr } = await admin
-      .from('users')
-      .insert({
-        wallet: address,
-        username: `user_${shortWallet}`,
-        display_name: `Creator ${shortWallet}`,
-      })
-      .select('*')
-      .single();
+    // El username inicial NO debe derivarse de la wallet: los primeros chars de
+    // una dirección 0x son predecibles, así que un atacante podría precrear
+    // `user_<6 hex de la víctima>` y bloquear (por unique constraint) el alta
+    // legítima del dueño real de esa wallet. Usamos entropía aleatoria.
+    // Reintentamos ante una colisión improbable del username generado.
+    let created = null;
+    let createErr = null;
+    for (let attempt = 0; attempt < 5 && !created; attempt++) {
+      const suffix = randomBytes(5).toString('hex'); // 10 hex chars
+      const res = await admin
+        .from('users')
+        .insert({
+          wallet: address,
+          username: `user_${suffix}`,
+          display_name: `Creator ${suffix.slice(0, 6)}`,
+        })
+        .select('*')
+        .single();
+      created = res.data;
+      createErr = res.error;
+      // 23505 = unique_violation. Si choca el username, reintenta con otro.
+      // Si choca la wallet, otro request paralelo ya creó al usuario: recupéralo.
+      if (createErr?.code === '23505') {
+        const { data: existing } = await admin
+          .from('users')
+          .select('*')
+          .eq('wallet', address)
+          .maybeSingle();
+        if (existing) {
+          created = existing;
+          createErr = null;
+          break;
+        }
+      } else {
+        break;
+      }
+    }
     if (createErr || !created) {
       return NextResponse.json({ error: 'No se pudo crear el usuario' }, { status: 500 });
     }

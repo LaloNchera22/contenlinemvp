@@ -4,7 +4,10 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { createPublicClient, http, parseEventLogs } from 'https://esm.sh/viem@2';
-import { polygon } from 'https://esm.sh/viem@2/chains';
+import { polygon, polygonMumbai } from 'https://esm.sh/viem@2/chains';
+
+// Selección de red por CHAIN_ID (137 = mainnet, 80001 = Mumbai testnet).
+const CHAIN = Number(Deno.env.get('CHAIN_ID') ?? '137') === 80001 ? polygonMumbai : polygon;
 
 const WHITELIST = [
   Deno.env.get('CONTRACT_SUBSCRIPTION')?.toLowerCase(),
@@ -39,7 +42,7 @@ Deno.serve(async (req: Request) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   );
   const client = createPublicClient({
-    chain: polygon,
+    chain: CHAIN,
     transport: http(Deno.env.get('POLYGON_RPC_URL')),
   });
 
@@ -108,7 +111,7 @@ Deno.serve(async (req: Request) => {
   // exista y que el monto onchain coincida exactamente (en micro-USDC) con ella.
   const { data: paymentSession } = await admin
     .from('payment_sessions')
-    .select('id, amount_usdc, status')
+    .select('id, amount_usdc, status, api_key_id')
     .eq('id', ev.sessionId)
     .maybeSingle();
   if (!paymentSession) {
@@ -143,6 +146,7 @@ Deno.serve(async (req: Request) => {
     from_wallet: ev.from,
     tx_hash: txHash,
     description: `session:${ev.sessionId}`,
+    api_key_id: paymentSession.api_key_id ?? null,
     verified: true,
   });
 
