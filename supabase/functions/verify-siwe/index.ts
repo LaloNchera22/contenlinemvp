@@ -45,7 +45,15 @@ Deno.serve(async (req: Request) => {
   const valid = await client.verifyMessage({ address, message, signature });
   if (!valid) return json({ error: 'Firma inválida' }, 401);
 
-  await admin.from('auth_nonces').update({ used: true }).eq('nonce', nonce);
+  // Invalidación atómica (compare-and-swap): cierra el race de requests
+  // paralelos con el mismo nonce. Solo gana quien flipea used=false → true.
+  const { data: consumed } = await admin
+    .from('auth_nonces')
+    .update({ used: true })
+    .eq('nonce', nonce)
+    .eq('used', false)
+    .select('nonce');
+  if (!consumed || consumed.length === 0) return json({ error: 'Nonce ya utilizado' }, 401);
 
   let { data: user } = await admin.from('users').select('*').eq('wallet', address).maybeSingle();
   if (!user) {
