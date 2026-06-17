@@ -218,6 +218,10 @@ CREATE INDEX IF NOT EXISTS idx_auth_nonces_expires_at ON auth_nonces (expires_at
 CREATE INDEX IF NOT EXISTS idx_transactions_creator ON transactions (creator_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_lookup
   ON subscriptions (subscriber_wallet, creator_id, active);
+-- Vista de suscriptores del creador (dashboard): filtra por creator + active y
+-- ordena por expires_at DESC. Cubre las queries de /api/subscribers.
+CREATE INDEX IF NOT EXISTS idx_subscriptions_creator_active
+  ON subscriptions (creator_id, active, expires_at DESC);
 
 -- ----------------------------- RLS -----------------------------
 

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, vi, afterEach } from 'vitest';
 import { calculateFee } from '../lib/fees';
 import { isSafeWebhookUrl, fireWebhook } from '../lib/webhook';
 import { isSafeHttpsUrl } from '../lib/url';
+import { monthlyValue, summarizeSubscribers } from '../lib/subscribers';
 
 describe('calculateFee', () => {
   it('aplica 10% a suscripción y curso', () => {
@@ -77,6 +78,42 @@ describe('fireWebhook', () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'svc-key';
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('err', { status: 500 }));
     await expect(fireWebhook('s', 'https://example.com/h')).rejects.toThrow(/500/);
+  });
+});
+
+describe('subscribers metrics', () => {
+  it('monthlyValue normaliza anual a mensual y descarta no positivos', () => {
+    expect(monthlyValue(12, 'yearly')).toBe(1);
+    expect(monthlyValue(9.99, 'monthly')).toBe(9.99);
+    expect(monthlyValue(null, 'monthly')).toBe(0);
+    expect(monthlyValue(0, 'yearly')).toBe(0);
+  });
+
+  it('summarizeSubscribers calcula MRR, expiraciones y tasa de renovación', () => {
+    const now = new Date('2026-06-17T00:00:00Z').getTime();
+    const days = (n: number) => new Date(now + n * 24 * 60 * 60 * 1000).toISOString();
+    const ago = (n: number) => new Date(now - n * 24 * 60 * 60 * 1000).toISOString();
+
+    const active = [
+      // vence en 3 días (cuenta como expiringSoon) y lleva 45 días → renovado
+      { plan_price_usdc: 10, plan_interval: 'monthly' as const, started_at: ago(45), expires_at: days(3) },
+      // anual a $120 → $10/mes; nuevo (5 días) → no renovado; vence lejos
+      { plan_price_usdc: 120, plan_interval: 'yearly' as const, started_at: ago(5), expires_at: days(300) },
+    ];
+    const m = summarizeSubscribers(active, now);
+    expect(m.activeCount).toBe(2);
+    expect(m.mrr).toBe(20); // 10 + 120/12
+    expect(m.expiringSoon).toBe(1);
+    expect(m.renewalRate).toBe(50); // 1 de 2
+  });
+
+  it('summarizeSubscribers no divide por cero con lista vacía', () => {
+    expect(summarizeSubscribers([])).toEqual({
+      activeCount: 0,
+      mrr: 0,
+      expiringSoon: 0,
+      renewalRate: 0,
+    });
   });
 });
 
