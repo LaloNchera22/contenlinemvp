@@ -23,10 +23,15 @@ function buildMessage(nonce: string, issuedAt: string, expiresAt: string): strin
 }
 
 Deno.serve(async (req: Request) => {
-  const admin = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-  );
+  // Env vars dentro del handler (rotación sin cold-start). El JWT secret es
+  // crítico: sin él no podemos firmar la sesión → fallo cerrado (no emitir token).
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const jwtSecret = Deno.env.get('SUPABASE_JWT_SECRET');
+  if (!supabaseUrl || !serviceKey || !jwtSecret) {
+    return json({ error: 'Variables de entorno no configuradas' }, 500);
+  }
+  const admin = createClient(supabaseUrl, serviceKey);
   const client = createPublicClient({
     chain: polygon,
     transport: http(Deno.env.get('POLYGON_RPC_URL')),
@@ -78,7 +83,7 @@ Deno.serve(async (req: Request) => {
 
   const secret = await crypto.subtle.importKey(
     'raw',
-    new TextEncoder().encode(Deno.env.get('SUPABASE_JWT_SECRET')!),
+    new TextEncoder().encode(jwtSecret),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
     ['sign', 'verify'],

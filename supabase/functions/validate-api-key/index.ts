@@ -15,10 +15,14 @@ async function sha256Hex(input: string): Promise<string> {
 }
 
 Deno.serve(async (req: Request) => {
-  const admin = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-  );
+  // Env vars dentro del handler (rotación sin cold-start). Fallo cerrado si falta
+  // config crítica de Supabase.
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!supabaseUrl || !serviceKey) {
+    return json({ error: 'Supabase env vars no configuradas' }, 500);
+  }
+  const admin = createClient(supabaseUrl, serviceKey);
 
   const auth = req.headers.get('authorization') ?? '';
   if (!auth.startsWith('Bearer ')) {

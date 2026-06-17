@@ -24,15 +24,24 @@ const SUBSCRIPTION_ABI = [
 ] as const;
 
 Deno.serve(async () => {
-  const admin = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-  );
+  // Leer las env vars DENTRO del handler (no a top-level): así rotar un secret en
+  // Supabase aplica sin esperar un cold-start de la Edge Function. Fallamos
+  // cerrado si falta config crítica.
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const contract = Deno.env.get('CONTRACT_SUBSCRIPTION') as `0x${string}` | undefined;
+  if (!supabaseUrl || !serviceKey) {
+    return json({ error: 'Supabase env vars no configuradas' }, 500);
+  }
+  if (!contract) {
+    return json({ error: 'CONTRACT_SUBSCRIPTION no configurado' }, 500);
+  }
+
+  const admin = createClient(supabaseUrl, serviceKey);
   const client = createPublicClient({
     chain: polygon,
     transport: http(Deno.env.get('POLYGON_RPC_URL')),
   });
-  const contract = Deno.env.get('CONTRACT_SUBSCRIPTION') as `0x${string}`;
 
   // Paginar para no cargar todas las suscripciones en memoria de una Edge
   // Function (límite de CPU ~150ms). Priorizamos las que ya vencieron o están
@@ -95,7 +104,12 @@ Deno.serve(async () => {
     }
   }
 
-  return new Response(JSON.stringify({ synced: subs.length, updated }), {
+  return json({ synced: subs.length, updated });
+});
+
+function json(data: unknown, status = 200): Response {
+  return new Response(JSON.stringify(data), {
+    status,
     headers: { 'Content-Type': 'application/json' },
   });
-});
+}

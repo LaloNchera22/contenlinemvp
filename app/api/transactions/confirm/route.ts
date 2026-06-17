@@ -83,7 +83,20 @@ export async function POST(req: NextRequest) {
   if (receipt.status !== 'success') {
     return NextResponse.json({ error: 'La transacción no fue exitosa' }, { status: 400 });
   }
-  if (!receipt.to || !isWhitelistedContract(receipt.to)) {
+  // isWhitelistedContract lanza si la whitelist está vacía (env vars sin
+  // configurar). Distinguimos ese caso (config rota → 503) de un contrato
+  // legítimamente no autorizado (400), y no exponemos el mensaje del Error
+  // porque puede contener nombres de env vars.
+  let isWhitelisted: boolean;
+  try {
+    isWhitelisted = !!receipt.to && isWhitelistedContract(receipt.to);
+  } catch {
+    return NextResponse.json(
+      { error: 'Servicio temporalmente no disponible' },
+      { status: 503 },
+    );
+  }
+  if (!isWhitelisted) {
     return NextResponse.json({ error: 'Contrato no autorizado' }, { status: 400 });
   }
 
