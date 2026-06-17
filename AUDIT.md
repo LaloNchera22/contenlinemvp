@@ -47,7 +47,7 @@ Estado de los hallazgos de la auditoría exhaustiva (commit base `96fdf19`).
 |----------|--------|
 | Aviso de privacidad / términos / cookies | ✅ Resuelto (`/privacy`, `/terms`, `/cookies` + banner + footer). |
 | Disclaimer KYC/AML y non-custodial | ✅ Resuelto (en términos y checkout). |
-| Age-gate NSFW | ✅ Parcial (flag `is_adult` + age-gate). Verificación de identidad de creadores adultos (2257/DSA) **pendiente**. |
+| Age-gate NSFW | 🔒 Decisión (BLOQUE 3.3): se **prohíbe** el contenido sexualmente explícito hasta integrar KYC de creadores adultos. Términos §4 actualizado; `AgeGate` deshabilitado (no se renderiza, código conservado); el flag `is_adult` se mantiene en schema (sin UI que lo active) para uso futuro. |
 | Right to Erasure | ✅ Resuelto (`DELETE /api/me` anonimiza PII y desactiva keys). |
 | Reportes contables | ✅ Resuelto (`GET /api/transactions/export` CSV). |
 | Accesibilidad (aria/roles) | ✅ Parcial (roles/labels en formularios, tablas y modales clave). |
@@ -58,6 +58,10 @@ Estado de los hallazgos de la auditoría exhaustiva (commit base `96fdf19`).
 
 - Consolidación total Edge Functions ↔ API Routes.
 - i18n (next-intl) y extracción de strings.
-- Verificación de identidad de creadores adultos.
+- **Contenido adulto — plan futuro:** integrar un proveedor de verificación de
+  identidad/edad (Persona / Veriff / Sumsub) para creadores adultos ANTES de
+  rehabilitar el contenido explícito. Al habilitarlo: re-renderizar `AgeGate`,
+  exponer el toggle `is_adult` solo para creadores verificados por KYC y cumplir
+  2257 (EE. UU.) / DSA (UE). Hasta entonces, prohibido por Términos §4.
 - Activación de analítica con consentimiento (el banner ya lo contempla).
 - UI de historial/auditoría de cambios para el creador.

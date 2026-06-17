@@ -4,8 +4,8 @@ pragma solidity ^0.8.24;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {OwnableWithTimelock} from "./OwnableWithTimelock.sol";
 
 /**
  * @title ContenlinePayment
@@ -13,7 +13,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
  *         category: 0=course(10%), 1=service(3%), 2=onchain(3%).
  *         Previene replay vinculando cada sessionId de Supabase.
  */
-contract ContenlinePayment is ReentrancyGuard, Ownable, Pausable {
+contract ContenlinePayment is ReentrancyGuard, OwnableWithTimelock, Pausable {
     using SafeERC20 for IERC20;
 
     IERC20 public immutable usdc;
@@ -34,8 +34,9 @@ contract ContenlinePayment is ReentrancyGuard, Ownable, Pausable {
         uint8 category
     );
     event FeeUpdated(uint8 category, uint16 newFeeBps);
+    event FeeRecipientUpdated(address newRecipient);
 
-    constructor(address _usdc, address _feeRecipient) Ownable(msg.sender) {
+    constructor(address _usdc, address _feeRecipient) OwnableWithTimelock(msg.sender) {
         require(_usdc != address(0) && _feeRecipient != address(0), "zero address");
         usdc = IERC20(_usdc);
         feeRecipient = _feeRecipient;
@@ -73,16 +74,35 @@ contract ContenlinePayment is ReentrancyGuard, Ownable, Pausable {
         emit PaymentCompleted(msg.sender, creator, sessionId, amount, fee, category);
     }
 
+    // --- Administración de fee con timelock de 48h (ver OwnableWithTimelock) ---
+    // Dos pasos (propose*/set*) vinculados al valor exacto. pause()/unpause()
+    // quedan FUERA del timelock a propósito: son palancas de emergencia y
+    // demorarlas 48h anularía su utilidad ante un incidente activo.
+
+    function proposeFeeBps(uint8 category, uint16 _feeBps) external onlyOwner {
+        require(category < 3, "invalid category");
+        require(_feeBps <= 1500, "fee too high"); // máx 15%
+        _proposeAction(keccak256(abi.encode("setFeeBps", category, _feeBps)));
+    }
+
     function setFeeBps(uint8 category, uint16 _feeBps) external onlyOwner {
         require(category < 3, "invalid category");
         require(_feeBps <= 1500, "fee too high"); // máx 15%
+        _consumeAction(keccak256(abi.encode("setFeeBps", category, _feeBps)));
         feeBps[category] = _feeBps;
         emit FeeUpdated(category, _feeBps);
     }
 
+    function proposeFeeRecipient(address _recipient) external onlyOwner {
+        require(_recipient != address(0), "zero address");
+        _proposeAction(keccak256(abi.encode("setFeeRecipient", _recipient)));
+    }
+
     function setFeeRecipient(address _recipient) external onlyOwner {
         require(_recipient != address(0), "zero address");
+        _consumeAction(keccak256(abi.encode("setFeeRecipient", _recipient)));
         feeRecipient = _recipient;
+        emit FeeRecipientUpdated(_recipient);
     }
 
     function pause() external onlyOwner {

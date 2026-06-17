@@ -4,7 +4,9 @@ import { getSessionFromRequest } from '@/lib/auth';
 import { safeHttpsUrl } from '@/lib/url';
 import SubscribeButton from './SubscribeButton';
 import ContentItem from './ContentItem';
-import AgeGate from './AgeGate';
+// AgeGate queda deshabilitado temporalmente (decisión BLOQUE 3.3): el contenido
+// sexualmente explícito está prohibido hasta integrar KYC de creadores adultos.
+// El componente se conserva en ./AgeGate.tsx para rehabilitarlo cuando exista KYC.
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -70,7 +72,6 @@ export default async function CreatorPage({ params }: { params: { username: stri
 
   return (
     <main className="min-h-screen max-w-3xl mx-auto px-6 py-16">
-      {user.is_adult && <AgeGate username={user.username} />}
       <div className="flex items-center gap-4">
         <div className="h-20 w-20 rounded-full bg-brand/30 overflow-hidden">
           {avatar && (

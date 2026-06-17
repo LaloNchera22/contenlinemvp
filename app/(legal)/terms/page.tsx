@@ -36,11 +36,17 @@ export default function TermsPage() {
       <section>
         <h2 className="text-lg font-semibold text-white">4. Contenido</h2>
         <p>
-          Los creadores son los únicos responsables del contenido que publican. El contenido
-          para adultos debe marcarse como tal (age-gate) y los creadores deben cumplir las
-          obligaciones de verificación de edad e identidad aplicables en su jurisdicción
-          (p. ej. 18 U.S.C. §2257 en EE. UU., DSA en la UE). Queda prohibido publicar
-          contenido ilegal.
+          Los creadores son los únicos responsables del contenido que publican. Queda prohibido
+          publicar contenido ilegal.
+        </p>
+        <p className="mt-2">
+          <strong>
+            Está prohibido publicar contenido sexualmente explícito hasta que la plataforma
+            habilite el módulo de KYC para creadores adultos.
+          </strong>{' '}
+          Habilitar ese contenido exige verificación de edad e identidad del creador conforme a
+          las obligaciones aplicables (p. ej. 18 U.S.C. §2257 en EE. UU., DSA en la UE), que la
+          plataforma integrará antes de permitirlo.
         </p>
       </section>
       <section>

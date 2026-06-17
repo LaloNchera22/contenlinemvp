@@ -56,6 +56,22 @@ npm run hardhat:deploy:mumbai   # testnet primero
 
 Copia las direcciones desplegadas a `NEXT_PUBLIC_CONTRACT_SUBSCRIPTION` y `NEXT_PUBLIC_CONTRACT_PAYMENT`.
 
+#### Mainnet deployment
+
+**NO** uses `scripts/deploy.ts` para mainnet: dejaría la EOA del deployer como owner
+de los contratos (una sola llave podría mover los fees). Usa siempre el script con
+multisig, que transfiere la propiedad a un Gnosis Safe y verifica el resultado:
+
+```bash
+MULTISIG_ADDRESS=0xTuGnosisSafe... npx hardhat run scripts/deploy-with-multisig.ts --network polygon
+```
+
+Los contratos heredan `OwnableWithTimelock`: cambiar fees o el receptor de fees es un
+proceso de dos pasos (`proposeFeeBps`/`setFeeBps`, `proposeFeeRecipient`/`setFeeRecipient`)
+con un **timelock de 48h** entre propuesta y ejecución, anunciado onchain vía los eventos
+`FeeUpdateProposed`/`FeeUpdateExecuted`. `pause()`/`unpause()` quedan fuera del timelock
+(palancas de emergencia).
+
 ### Edge Functions
 
 Las API Routes de Next son la fuente de verdad de la lógica de negocio (incluida

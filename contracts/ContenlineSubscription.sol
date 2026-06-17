@@ -4,14 +4,14 @@ pragma solidity ^0.8.24;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {OwnableWithTimelock} from "./OwnableWithTimelock.sol";
 
 /**
  * @title ContenlineSubscription
  * @notice Suscripciones en USDC. Cobra fee (default 10%) y transfiere el neto al creador.
  *         El estado onchain es la fuente de verdad que Supabase espejea.
  */
-contract ContenlineSubscription is ReentrancyGuard, Ownable {
+contract ContenlineSubscription is ReentrancyGuard, OwnableWithTimelock {
     using SafeERC20 for IERC20;
 
     IERC20 public immutable usdc;
@@ -54,7 +54,7 @@ contract ContenlineSubscription is ReentrancyGuard, Ownable {
     event FeeUpdated(uint256 newFeeBps);
     event FeeRecipientUpdated(address newRecipient);
 
-    constructor(address _usdc, address _feeRecipient) Ownable(msg.sender) {
+    constructor(address _usdc, address _feeRecipient) OwnableWithTimelock(msg.sender) {
         require(_usdc != address(0) && _feeRecipient != address(0), "zero address");
         usdc = IERC20(_usdc);
         feeRecipient = _feeRecipient;
@@ -122,14 +122,32 @@ contract ContenlineSubscription is ReentrancyGuard, Ownable {
         active = expiry > block.timestamp;
     }
 
+    // --- Administración de fee con timelock de 48h (ver OwnableWithTimelock) ---
+    // Cada cambio es en dos pasos: propose* anuncia el valor exacto onchain y
+    // arranca la ventana de 48h; set* lo aplica una vez transcurrida. El actionId
+    // está vinculado al valor, así que no se puede ejecutar un valor distinto al
+    // propuesto.
+
+    function proposeFeeBps(uint256 _feeBps) external onlyOwner {
+        require(_feeBps <= MAX_FEE_BPS, "fee too high");
+        _proposeAction(keccak256(abi.encode("setFeeBps", _feeBps)));
+    }
+
     function setFeeBps(uint256 _feeBps) external onlyOwner {
         require(_feeBps <= MAX_FEE_BPS, "fee too high");
+        _consumeAction(keccak256(abi.encode("setFeeBps", _feeBps)));
         feeBps = _feeBps;
         emit FeeUpdated(_feeBps);
     }
 
+    function proposeFeeRecipient(address _recipient) external onlyOwner {
+        require(_recipient != address(0), "zero address");
+        _proposeAction(keccak256(abi.encode("setFeeRecipient", _recipient)));
+    }
+
     function setFeeRecipient(address _recipient) external onlyOwner {
         require(_recipient != address(0), "zero address");
+        _consumeAction(keccak256(abi.encode("setFeeRecipient", _recipient)));
         feeRecipient = _recipient;
         emit FeeRecipientUpdated(_recipient);
     }
