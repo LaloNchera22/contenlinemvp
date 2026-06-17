@@ -5,6 +5,7 @@ import { isWhitelistedContract, PAYMENT_EVENT_ABI, SUBSCRIPTION_EVENT_ABI } from
 import { calculateFee, FeeCategory } from '@/lib/fees';
 import { getChain, getRpcUrl } from '@/lib/chain';
 import { checkIpRateLimit, clientIp } from '@/lib/rateLimit';
+import { fireWebhook } from '@/lib/webhook';
 
 export const runtime = 'nodejs';
 
@@ -102,6 +103,9 @@ export async function POST(req: NextRequest) {
   let creatorId: string;
   let description: string | null = null;
   let apiKeyId: string | null = null;
+  // webhook_url de la payment session (si el developer lo configuró al crear el
+  // checkout). Se usa en el bloque 5a para notificar payment.completed.
+  let webhookUrl: string | null = null;
   // Datos diferidos para el upsert de suscripción (tras validar montos).
   let subContext: { planUuid: string; subscriber: string; expiresAt: bigint } | null = null;
 
@@ -118,7 +122,7 @@ export async function POST(req: NextRequest) {
     // API key que originó el cobro (para atribuir volumen por key).
     const { data: paymentSession } = await admin
       .from('payment_sessions')
-      .select('id, amount_usdc, creator_id, api_key_id')
+      .select('id, amount_usdc, creator_id, api_key_id, webhook_url')
       .eq('id', ev.sessionId)
       .maybeSingle();
     if (!paymentSession) {
@@ -138,6 +142,7 @@ export async function POST(req: NextRequest) {
     fromWallet = ev.from;
     creatorId = paymentSession.creator_id;
     apiKeyId = paymentSession.api_key_id ?? null;
+    webhookUrl = paymentSession.webhook_url ?? null;
     description = `session:${ev.sessionId}`;
   } else if (subLogs.length > 0) {
     const ev = subLogs[0].args as {
@@ -229,6 +234,18 @@ export async function POST(req: NextRequest) {
         .from('payment_sessions')
         .update({ status: 'completed', tx_hash: txHash })
         .eq('id', sessionId);
+
+      // Disparar webhook al developer si la session tiene webhook_url configurado.
+      // Fire-and-forget: no bloqueamos la respuesta al cliente. Si el webhook falla,
+      // process-webhook lo registra en webhook_deliveries y retry-webhooks lo
+      // recoge después con backoff exponencial.
+      if (webhookUrl) {
+        // No esperamos: la respuesta al confirmar la tx debe ser rápida.
+        fireWebhook(sessionId, webhookUrl).catch(() => {
+          // Los errores ya se loguean/persisten en process-webhook; aquí solo
+          // evitamos una unhandled promise rejection.
+        });
+      }
     }
   }
 

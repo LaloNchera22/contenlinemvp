@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, vi, afterEach } from 'vitest';
 import { calculateFee } from '../lib/fees';
-import { isSafeWebhookUrl } from '../lib/webhook';
+import { isSafeWebhookUrl, fireWebhook } from '../lib/webhook';
 import { isSafeHttpsUrl } from '../lib/url';
 
 describe('calculateFee', () => {
@@ -38,6 +38,45 @@ describe('isSafeWebhookUrl', () => {
     expect(isSafeWebhookUrl('https://169.254.169.254')).toBe(false);
     expect(isSafeWebhookUrl('https://[::1]')).toBe(false);
     expect(isSafeWebhookUrl('not a url')).toBe(false);
+  });
+});
+
+describe('fireWebhook', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+  });
+
+  it('lanza (fallo cerrado) si faltan las env vars de Supabase', async () => {
+    await expect(fireWebhook('sess-1', 'https://example.com/h')).rejects.toThrow(
+      /env vars/i,
+    );
+  });
+
+  it('invoca process-webhook con el service key y el sessionId', async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://proj.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'svc-key';
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response('{}', { status: 200 }));
+
+    await fireWebhook('sess-1', 'https://example.com/h');
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://proj.supabase.co/functions/v1/process-webhook');
+    expect((init as RequestInit).headers).toMatchObject({
+      Authorization: 'Bearer svc-key',
+    });
+    expect((init as RequestInit).body).toContain('sess-1');
+  });
+
+  it('lanza si process-webhook responde no-2xx', async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://proj.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'svc-key';
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('err', { status: 500 }));
+    await expect(fireWebhook('s', 'https://example.com/h')).rejects.toThrow(/500/);
   });
 });
 

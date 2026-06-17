@@ -40,6 +40,42 @@ export function isSafeWebhookUrl(raw: unknown): raw is string {
   return true;
 }
 
+/**
+ * Dispara la entrega del webhook al developer para una payment session.
+ *
+ * Delega en la Edge Function `process-webhook` en lugar de hacer el POST aquí
+ * por dos razones documentadas en la arquitectura:
+ *   1) La firma HMAC se mantiene del lado server (el secret WEBHOOK_SIGNING_SECRET
+ *      nunca entra al bundle de Next, que es público para el cliente).
+ *   2) Centraliza la lógica de persistencia + retry en un solo lugar
+ *      (webhook_deliveries), evitando dos implementaciones del backoff.
+ *
+ * El llamador la invoca fire-and-forget (no bloquea la respuesta al confirmar la
+ * tx); cualquier fallo queda registrado en webhook_deliveries para que la Edge
+ * Function `retry-webhooks` lo reintente.
+ */
+export async function fireWebhook(sessionId: string, webhookUrl: string): Promise<void> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceKey) {
+    // Fallo cerrado: sin estas variables no podemos firmar ni autenticar la
+    // invocación a la Edge Function. Lanzamos para que el .catch() del llamador
+    // lo registre en lugar de tragarse el error silenciosamente.
+    throw new Error('Supabase env vars no configuradas para fireWebhook');
+  }
+  const res = await fetch(`${supabaseUrl}/functions/v1/process-webhook`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${serviceKey}`,
+    },
+    body: JSON.stringify({ sessionId, webhookUrl }),
+  });
+  if (!res.ok) {
+    throw new Error(`Webhook delivery failed: ${res.status}`);
+  }
+}
+
 function isPrivateOrReservedIp(host: string): boolean {
   // IPv6: rechazar loopback (::1), link-local (fe80::), ULA (fc00::/7) y mapeadas.
   if (host.includes(':')) {

@@ -163,6 +163,30 @@ CREATE TABLE IF NOT EXISTS payment_sessions (
   created_at    TIMESTAMPTZ DEFAULT now()
 );
 
+-- Entregas de webhooks a developers (persistencia + retry con backoff).
+-- Cada fila es un EVENTO a entregar; attempts cuenta los reintentos. delivered_at
+-- NULL = aún pendiente. next_retry_at marca cuándo el cron retry-webhooks debe
+-- reintentarla. Mantener el histórico (incluso entregados) sirve de pista de
+-- auditoría para el developer y para depurar entregas.
+CREATE TABLE IF NOT EXISTS webhook_deliveries (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id      UUID REFERENCES payment_sessions(id) ON DELETE CASCADE,
+  webhook_url     TEXT NOT NULL,
+  payload         JSONB NOT NULL,
+  signature       TEXT NOT NULL,
+  response_code   INTEGER,
+  response_body   TEXT,
+  attempts        INTEGER DEFAULT 0,
+  next_retry_at   TIMESTAMPTZ,
+  delivered_at    TIMESTAMPTZ,
+  created_at      TIMESTAMPTZ DEFAULT now()
+);
+-- Índice parcial: el cron solo busca entregas pendientes (delivered_at IS NULL),
+-- así el índice se mantiene pequeño aunque el histórico crezca.
+CREATE INDEX IF NOT EXISTS idx_webhook_pending
+  ON webhook_deliveries (next_retry_at)
+  WHERE delivered_at IS NULL;
+
 -- Registro de uso de API keys (rate limiting + auditoría)
 CREATE TABLE IF NOT EXISTS api_key_usage (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -210,6 +234,10 @@ ALTER TABLE lessons             ENABLE ROW LEVEL SECURITY;
 ALTER TABLE services            ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payment_sessions    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE api_key_usage       ENABLE ROW LEVEL SECURITY;
+-- webhook_deliveries: sin policies. Solo service_role (process-webhook /
+-- retry-webhooks) la lee y escribe; ningún cliente anon/auth debe verla porque
+-- contiene la firma HMAC y el payload completo.
+ALTER TABLE webhook_deliveries  ENABLE ROW LEVEL SECURITY;
 
 -- Users: lectura pública INTENCIONAL de perfiles (username, display_name, wallet,
 -- avatar son datos públicos del creador). La escritura queda restringida al dueño.
@@ -487,6 +515,40 @@ BEGIN
   END IF;
   PERFORM cron.schedule('cleanup-payment-sessions', '0 3 * * *',
     'SELECT cleanup_expired_payment_sessions()');
+END;
+$$;
+
+-- Reintento de webhooks fallidos: invoca la Edge Function retry-webhooks cada
+-- 5 minutos. La función busca webhook_deliveries pendientes cuyo next_retry_at
+-- ya venció y las reintenta con backoff. Se programa vía pg_cron + pg_net (HTTP
+-- saliente desde Postgres). Requiere configurar app.settings.retry_webhooks_url
+-- y app.settings.service_role_key, o invocarla manualmente; aquí dejamos el
+-- schedule como referencia idempotente. Si pg_net no está disponible, ejecutar
+-- la Edge Function con el scheduler nativo de Supabase Functions en su lugar.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'retry-webhooks') THEN
+    PERFORM cron.unschedule('retry-webhooks');
+  END IF;
+  -- NOTA: ajustar la URL del proyecto y el header de autorización al desplegar.
+  -- El cron real se programa desde el dashboard de Supabase Functions (Schedule)
+  -- apuntando a retry-webhooks con cron '*/5 * * * *'.
+  PERFORM cron.schedule(
+    'retry-webhooks',
+    '*/5 * * * *',
+    $cron$
+      SELECT net.http_post(
+        url := current_setting('app.settings.retry_webhooks_url', true),
+        headers := jsonb_build_object(
+          'Authorization',
+          'Bearer ' || current_setting('app.settings.service_role_key', true),
+          'Content-Type', 'application/json'
+        ),
+        body := '{}'::jsonb
+      )
+      WHERE current_setting('app.settings.retry_webhooks_url', true) IS NOT NULL;
+    $cron$
+  );
 END;
 $$;
 

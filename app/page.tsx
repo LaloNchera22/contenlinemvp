@@ -59,6 +59,9 @@ export default function Home() {
           <Link href="/dashboard" className="hover:text-white">
             Dashboard
           </Link>
+          <Link href="/docs" className="hover:text-white">
+            API · Docs
+          </Link>
           <Link href="/privacy" className="hover:text-white">
             Privacidad
           </Link>
