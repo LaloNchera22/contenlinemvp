@@ -5,6 +5,8 @@ import { isWhitelistedContract, PAYMENT_EVENT_ABI, SUBSCRIPTION_EVENT_ABI } from
 import { calculateFee, FeeCategory } from '@/lib/fees';
 import { getChain, getRpcUrl } from '@/lib/chain';
 import { checkIpRateLimit, clientIp } from '@/lib/rateLimit';
+import { fireWebhook } from '@/lib/webhook';
+import { notifyCreator } from '@/lib/email';
 
 export const runtime = 'nodejs';
 
@@ -82,7 +84,20 @@ export async function POST(req: NextRequest) {
   if (receipt.status !== 'success') {
     return NextResponse.json({ error: 'La transacción no fue exitosa' }, { status: 400 });
   }
-  if (!receipt.to || !isWhitelistedContract(receipt.to)) {
+  // isWhitelistedContract lanza si la whitelist está vacía (env vars sin
+  // configurar). Distinguimos ese caso (config rota → 503) de un contrato
+  // legítimamente no autorizado (400), y no exponemos el mensaje del Error
+  // porque puede contener nombres de env vars.
+  let isWhitelisted: boolean;
+  try {
+    isWhitelisted = !!receipt.to && isWhitelistedContract(receipt.to);
+  } catch {
+    return NextResponse.json(
+      { error: 'Servicio temporalmente no disponible' },
+      { status: 503 },
+    );
+  }
+  if (!isWhitelisted) {
     return NextResponse.json({ error: 'Contrato no autorizado' }, { status: 400 });
   }
 
@@ -102,6 +117,10 @@ export async function POST(req: NextRequest) {
   let creatorId: string;
   let description: string | null = null;
   let apiKeyId: string | null = null;
+  // webhook_url de la payment session (si el developer lo configuró al crear el
+  // checkout). Se usa en el bloque 5a para notificar payment.completed.
+  let webhookUrl: string | null = null;
+  let planName: string | null = null;
   // Datos diferidos para el upsert de suscripción (tras validar montos).
   let subContext: { planUuid: string; subscriber: string; expiresAt: bigint } | null = null;
 
@@ -118,7 +137,7 @@ export async function POST(req: NextRequest) {
     // API key que originó el cobro (para atribuir volumen por key).
     const { data: paymentSession } = await admin
       .from('payment_sessions')
-      .select('id, amount_usdc, creator_id, api_key_id')
+      .select('id, amount_usdc, creator_id, api_key_id, webhook_url')
       .eq('id', ev.sessionId)
       .maybeSingle();
     if (!paymentSession) {
@@ -138,6 +157,7 @@ export async function POST(req: NextRequest) {
     fromWallet = ev.from;
     creatorId = paymentSession.creator_id;
     apiKeyId = paymentSession.api_key_id ?? null;
+    webhookUrl = paymentSession.webhook_url ?? null;
     description = `session:${ev.sessionId}`;
   } else if (subLogs.length > 0) {
     const ev = subLogs[0].args as {
@@ -160,13 +180,14 @@ export async function POST(req: NextRequest) {
     const onchainPlanId = ev.planId.toString();
     const { data: plan } = await admin
       .from('subscription_plans')
-      .select('id, price_usdc')
+      .select('id, price_usdc, name')
       .eq('creator_id', creator.id)
       .eq('onchain_plan_id', onchainPlanId)
       .maybeSingle();
     if (!plan) {
       return NextResponse.json({ error: 'Plan de suscripción no encontrado' }, { status: 400 });
     }
+    planName = plan.name;
     const expectedRaw = BigInt(Math.round(Number(plan.price_usdc) * 1e6));
     if (ev.amount !== expectedRaw) {
       return NextResponse.json(
@@ -229,10 +250,36 @@ export async function POST(req: NextRequest) {
         .from('payment_sessions')
         .update({ status: 'completed', tx_hash: txHash })
         .eq('id', sessionId);
+
+      // Disparar webhook al developer si la session tiene webhook_url configurado.
+      // Fire-and-forget: no bloqueamos la respuesta al cliente. Si el webhook falla,
+      // process-webhook lo registra en webhook_deliveries y retry-webhooks lo
+      // recoge después con backoff exponencial.
+      if (webhookUrl) {
+        // No esperamos: la respuesta al confirmar la tx debe ser rápida.
+        fireWebhook(sessionId, webhookUrl).catch(() => {
+          // Los errores ya se loguean/persisten en process-webhook; aquí solo
+          // evitamos una unhandled promise rejection.
+        });
+      }
     }
+
+    // Notificar al creador la nueva venta (best-effort, respeta sus prefs).
+    await notifyCreator(admin, creatorId, 'new_purchase', {
+      subject: `Nueva venta: $${amount.toFixed(2)} USDC`,
+      html: `<p>Recibiste una nueva venta de <strong>$${amount.toFixed(2)} USDC</strong> en la categoría <strong>${category}</strong>.</p>`,
+    });
   }
 
   // 5b. Suscripción: espejar el estado onchain en la tabla subscriptions.
+  //
+  // DECISIÓN (D.3): NO disparamos webhook al developer para subscription.created/
+  // renewed. El modelo actual asocia webhook_url a la payment_session del checkout
+  // de API, no al subscription_plan. Las suscripciones llegan desde el perfil
+  // público del creador (SubscribeButton), un flujo sin sesión de API ni
+  // webhook_url asociado, así que no hay endpoint de developer a quien notificar.
+  // Añadir webhook_url por plan queda como trabajo futuro (ver /docs y AUDIT.md).
+  // El creador sí se entera vía email (notifyCreator 'new_subscriber').
   if (subContext) {
     const expiresIso = new Date(Number(subContext.expiresAt) * 1000).toISOString();
     const { data: existingSub } = await admin
@@ -259,6 +306,13 @@ export async function POST(req: NextRequest) {
         active: true,
         expires_at: expiresIso,
         last_tx_hash: txHash,
+      });
+
+      // Solo en alta NUEVA (no en renovación/extends): notificar nuevo suscriptor.
+      const short = `${subContext.subscriber.slice(0, 6)}…${subContext.subscriber.slice(-4)}`;
+      await notifyCreator(admin, creatorId, 'new_subscriber', {
+        subject: `Nuevo suscriptor: ${short}`,
+        html: `<p>La wallet <strong>${short}</strong> se suscribió a tu plan <strong>${planName ?? ''}</strong>.</p>`,
       });
     }
   }

@@ -1,7 +1,9 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, vi, afterEach } from 'vitest';
 import { calculateFee } from '../lib/fees';
-import { isSafeWebhookUrl } from '../lib/webhook';
+import { isSafeWebhookUrl, fireWebhook } from '../lib/webhook';
 import { isSafeHttpsUrl } from '../lib/url';
+import { monthlyValue, summarizeSubscribers } from '../lib/subscribers';
+import { sendEmail, notifyCreator } from '../lib/email';
 
 describe('calculateFee', () => {
   it('aplica 10% a suscripción y curso', () => {
@@ -38,6 +40,145 @@ describe('isSafeWebhookUrl', () => {
     expect(isSafeWebhookUrl('https://169.254.169.254')).toBe(false);
     expect(isSafeWebhookUrl('https://[::1]')).toBe(false);
     expect(isSafeWebhookUrl('not a url')).toBe(false);
+  });
+});
+
+describe('fireWebhook', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+  });
+
+  it('lanza (fallo cerrado) si faltan las env vars de Supabase', async () => {
+    await expect(fireWebhook('sess-1', 'https://example.com/h')).rejects.toThrow(
+      /env vars/i,
+    );
+  });
+
+  it('invoca process-webhook con el service key y el sessionId', async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://proj.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'svc-key';
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response('{}', { status: 200 }));
+
+    await fireWebhook('sess-1', 'https://example.com/h');
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://proj.supabase.co/functions/v1/process-webhook');
+    expect((init as RequestInit).headers).toMatchObject({
+      Authorization: 'Bearer svc-key',
+    });
+    expect((init as RequestInit).body).toContain('sess-1');
+  });
+
+  it('lanza si process-webhook responde no-2xx', async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://proj.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'svc-key';
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('err', { status: 500 }));
+    await expect(fireWebhook('s', 'https://example.com/h')).rejects.toThrow(/500/);
+  });
+});
+
+describe('subscribers metrics', () => {
+  it('monthlyValue normaliza anual a mensual y descarta no positivos', () => {
+    expect(monthlyValue(12, 'yearly')).toBe(1);
+    expect(monthlyValue(9.99, 'monthly')).toBe(9.99);
+    expect(monthlyValue(null, 'monthly')).toBe(0);
+    expect(monthlyValue(0, 'yearly')).toBe(0);
+  });
+
+  it('summarizeSubscribers calcula MRR, expiraciones y tasa de renovación', () => {
+    const now = new Date('2026-06-17T00:00:00Z').getTime();
+    const days = (n: number) => new Date(now + n * 24 * 60 * 60 * 1000).toISOString();
+    const ago = (n: number) => new Date(now - n * 24 * 60 * 60 * 1000).toISOString();
+
+    const active = [
+      // vence en 3 días (cuenta como expiringSoon) y lleva 45 días → renovado
+      { plan_price_usdc: 10, plan_interval: 'monthly' as const, started_at: ago(45), expires_at: days(3) },
+      // anual a $120 → $10/mes; nuevo (5 días) → no renovado; vence lejos
+      { plan_price_usdc: 120, plan_interval: 'yearly' as const, started_at: ago(5), expires_at: days(300) },
+    ];
+    const m = summarizeSubscribers(active, now);
+    expect(m.activeCount).toBe(2);
+    expect(m.mrr).toBe(20); // 10 + 120/12
+    expect(m.expiringSoon).toBe(1);
+    expect(m.renewalRate).toBe(50); // 1 de 2
+  });
+
+  it('summarizeSubscribers no divide por cero con lista vacía', () => {
+    expect(summarizeSubscribers([])).toEqual({
+      activeCount: 0,
+      mrr: 0,
+      expiringSoon: 0,
+      renewalRate: 0,
+    });
+  });
+});
+
+describe('email notifications', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete process.env.RESEND_API_KEY;
+  });
+
+  it('sendEmail es no-op (fallo abierto) sin RESEND_API_KEY', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+    const res = await sendEmail({ to: 'a@b.com', subject: 's', html: 'h' });
+    expect(res).toEqual({ sent: false, reason: 'no_api_key' });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  // admin mock: encadena from().select().eq().maybeSingle() devolviendo `prefs`.
+  function adminWith(prefs: unknown) {
+    return {
+      from: () => ({
+        select: () => ({
+          eq: () => ({ maybeSingle: async () => ({ data: prefs }) }),
+        }),
+      }),
+    } as never;
+  }
+
+  it('notifyCreator no envía si el email no está verificado', async () => {
+    process.env.RESEND_API_KEY = 'rk';
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+    await notifyCreator(
+      adminWith({ email: 'a@b.com', email_verified: false, email_notifications: { new_purchase: true } }),
+      'creator-1',
+      'new_purchase',
+      { subject: 's', html: 'h' },
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('notifyCreator respeta el toggle desactivado del tipo', async () => {
+    process.env.RESEND_API_KEY = 'rk';
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+    await notifyCreator(
+      adminWith({ email: 'a@b.com', email_verified: true, email_notifications: { new_purchase: false } }),
+      'creator-1',
+      'new_purchase',
+      { subject: 's', html: 'h' },
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('notifyCreator envía cuando está verificado y el tipo activado', async () => {
+    process.env.RESEND_API_KEY = 'rk';
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response('{}', { status: 200 }));
+    await notifyCreator(
+      adminWith({ email: 'a@b.com', email_verified: true, email_notifications: { new_purchase: true } }),
+      'creator-1',
+      'new_purchase',
+      { subject: 's', html: 'h' },
+    );
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls[0][0]).toBe('https://api.resend.com/emails');
   });
 });
 

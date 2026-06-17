@@ -16,6 +16,7 @@ Pagos en **USDC sobre Polygon**. Autenticación sin contraseñas vía **SIWE** (
 | Web3 | Wagmi v2 + Viem + RainbowKit + SIWE |
 | Blockchain | Polygon — contratos Solidity con Hardhat |
 | Pagos | USDC en Polygon |
+| Email | Resend (opcional, vía REST; notificaciones transaccionales) |
 
 ## Estructura
 
@@ -66,8 +67,14 @@ Functions quedan reservadas para crons y webhooks invocados desde Supabase:
 supabase functions deploy validate-api-key
 supabase functions deploy sync-subscriptions   # cron: 0 * * * *
 supabase functions deploy sync-plans-onchain    # cron: */5 * * * *  (fallback del webhook PlanSet)
-supabase functions deploy process-webhook
+supabase functions deploy process-webhook       # entrega webhooks firmados (HMAC)
+supabase functions deploy retry-webhooks        # cron: */5 * * * *  (reintenta entregas fallidas)
 ```
+
+`process-webhook` requiere el secret `WEBHOOK_SIGNING_SECRET` (firma HMAC-SHA256);
+sin él aborta (fallo cerrado). Los reintentos usan backoff exponencial (máx. 5
+intentos) y se persisten en la tabla `webhook_deliveries`. La documentación pública
+para developers está en `/docs`.
 
 ## Seguridad implementada
 
@@ -88,3 +95,18 @@ Definido en `lib/fees.ts` y replicado en los contratos:
 | course | 10% |
 | service | 3% |
 | onchain | 3% |
+
+## API pública (developers)
+
+Documentación en [`/docs`](app/docs/page.tsx): autenticación con API keys, creación
+de checkouts (`POST /api/v1/checkout`), consulta de sesiones y **webhooks firmados**
+(HMAC-SHA256, eventos `payment.completed`/`failed`/`subscription.created`/`renewed`,
+política de reintentos con backoff e idempotencia por `event.id`).
+
+## Production-readiness
+
+Tras la 5ª ronda de remediación (ver `AUDIT.md`), el proyecto está en **~95/100**:
+API pública completa (webhooks reales con retry), vista de suscriptores para el
+creador, notificaciones por email opt-in y hardening de secrets/whitelist/env vars.
+Pendiente principal: internacionalización (i18n con next-intl) y verificación de
+identidad de creadores adultos.

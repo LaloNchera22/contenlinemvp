@@ -1,6 +1,11 @@
 // Edge Function: process-webhook
 // Notifica al developer cuando una payment session se completa.
-// Firma el payload con HMAC para que el receptor pueda verificar autenticidad.
+// Firma el payload con HMAC para que el receptor pueda verificar autenticidad y
+// PERSISTE cada intento en webhook_deliveries para reintentos con backoff.
+//
+// Invocación: POST { sessionId, webhookUrl? }. webhookUrl es informativo; la URL
+// de destino se LEE de la payment_session (fuente de verdad, mitiga que un
+// llamador pase una URL distinta a la validada en el checkout → SSRF).
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -73,7 +78,26 @@ async function hmacSha256(secret: string, payload: string): Promise<string> {
     .join('');
 }
 
+// Backoff exponencial entre intentos. máximo 5 intentos: la entrega inicial
+// (attempts 1) más reintentos espaciados 1m, 5m, 30m, 2h. El valor de 12h es el
+// tope superior del backoff (se usaría si MAX_ATTEMPTS se ampliara). Tras agotar
+// los intentos, next_retry_at queda NULL y retry-webhooks deja de tomarla.
+const BACKOFF_MINUTES = [1, 5, 30, 120, 720];
+const MAX_ATTEMPTS = 5;
+
+function nextRetryAt(attempts: number): string | null {
+  if (attempts >= MAX_ATTEMPTS) return null;
+  const idx = Math.min(attempts - 1, BACKOFF_MINUTES.length - 1);
+  return new Date(Date.now() + BACKOFF_MINUTES[idx] * 60_000).toISOString();
+}
+
 Deno.serve(async (req: Request) => {
+  // Fallo CERRADO antes de procesar nada: sin el secret no podemos firmar el
+  // webhook, y un secret por defecto permitiría a cualquiera forjar entregas
+  // válidas (impersonación). Abortamos sin siquiera leer el body.
+  const secret = Deno.env.get('WEBHOOK_SIGNING_SECRET');
+  if (!secret) return json({ error: 'WEBHOOK_SIGNING_SECRET no configurado' }, 500);
+
   const admin = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
@@ -97,7 +121,9 @@ Deno.serve(async (req: Request) => {
     return json({ ok: true, delivered: false, reason: 'webhook_url no permitida' });
   }
 
+  const eventId = crypto.randomUUID();
   const payload = JSON.stringify({
+    id: eventId,
     event: 'payment.completed',
     session_id: session.id,
     amount_usdc: session.amount_usdc,
@@ -108,32 +134,73 @@ Deno.serve(async (req: Request) => {
     timestamp: new Date().toISOString(),
   });
 
-  // Sin fallback: un secreto por defecto en producción permitiría a cualquiera
-  // forjar webhooks válidos. Si no está configurado, abortamos en vez de firmar
-  // con un secreto conocido.
-  const secret = Deno.env.get('WEBHOOK_SIGNING_SECRET');
-  if (!secret) return json({ error: 'WEBHOOK_SIGNING_SECRET no configurado' }, 500);
   const signature = await hmacSha256(secret, payload);
 
-  let delivered = false;
-  let responseCode = 0;
+  // Persistir el intento ANTES de hacer la request: si el proceso muere a mitad
+  // del fetch, la fila ya existe y retry-webhooks la recogerá.
+  const { data: delivery } = await admin
+    .from('webhook_deliveries')
+    .insert({
+      session_id: session.id,
+      webhook_url: session.webhook_url,
+      payload: JSON.parse(payload),
+      signature,
+      attempts: 0,
+    })
+    .select('id')
+    .single();
+
+  // attempts pasa de 0 → 1 con esta entrega inicial.
+  const attempts = 1;
+  const rowId = delivery?.id ?? eventId;
+  // Contenline-Delivery-Id es único por INTENTO (rowId:attempt); Event-Id es
+  // único por EVENTO y se repite entre reintentos para que el receptor deduplique.
+  const result = await deliver(session.webhook_url, payload, signature, `${rowId}:${attempts}`, eventId);
+  const delivered = result.code >= 200 && result.code < 300;
+  await admin
+    .from('webhook_deliveries')
+    .update({
+      response_code: result.code || null,
+      response_body: result.body,
+      attempts,
+      delivered_at: delivered ? new Date().toISOString() : null,
+      next_retry_at: delivered ? null : nextRetryAt(attempts),
+    })
+    .eq('id', rowId);
+
+  return json({ ok: true, delivered, responseCode: result.code });
+});
+
+/** Hace el POST firmado al endpoint del developer. Trunca el body a 1KB. */
+async function deliver(
+  url: string,
+  payload: string,
+  signature: string,
+  deliveryId: string,
+  eventId: string,
+): Promise<{ code: number; body: string | null }> {
   try {
-    const res = await fetch(session.webhook_url, {
+    const res = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        // Header legacy + nombres canónicos documentados en /docs.
         'X-Contenline-Signature': signature,
+        'Contenline-Signature': signature,
+        'Contenline-Timestamp': String(Math.floor(Date.now() / 1000)),
+        'Contenline-Delivery-Id': deliveryId,
+        'Contenline-Event-Id': eventId,
       },
       body: payload,
+      // El developer debe responder rápido; cortamos a 10s (ver /docs).
+      signal: AbortSignal.timeout(10_000),
     });
-    responseCode = res.status;
-    delivered = res.ok;
-  } catch (_e) {
-    delivered = false;
+    const text = await res.text().catch(() => '');
+    return { code: res.status, body: text.slice(0, 1024) || null };
+  } catch (e) {
+    return { code: 0, body: e instanceof Error ? e.message.slice(0, 1024) : null };
   }
-
-  return json({ ok: true, delivered, responseCode });
-});
+}
 
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {

@@ -163,6 +163,60 @@ CREATE TABLE IF NOT EXISTS payment_sessions (
   created_at    TIMESTAMPTZ DEFAULT now()
 );
 
+-- Entregas de webhooks a developers (persistencia + retry con backoff).
+-- Cada fila es un EVENTO a entregar; attempts cuenta los reintentos. delivered_at
+-- NULL = aún pendiente. next_retry_at marca cuándo el cron retry-webhooks debe
+-- reintentarla. Mantener el histórico (incluso entregados) sirve de pista de
+-- auditoría para el developer y para depurar entregas.
+CREATE TABLE IF NOT EXISTS webhook_deliveries (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id      UUID REFERENCES payment_sessions(id) ON DELETE CASCADE,
+  webhook_url     TEXT NOT NULL,
+  payload         JSONB NOT NULL,
+  signature       TEXT NOT NULL,
+  response_code   INTEGER,
+  response_body   TEXT,
+  attempts        INTEGER DEFAULT 0,
+  next_retry_at   TIMESTAMPTZ,
+  delivered_at    TIMESTAMPTZ,
+  created_at      TIMESTAMPTZ DEFAULT now()
+);
+-- Índice parcial: el cron solo busca entregas pendientes (delivered_at IS NULL),
+-- así el índice se mantiene pequeño aunque el histórico crezca.
+CREATE INDEX IF NOT EXISTS idx_webhook_pending
+  ON webhook_deliveries (next_retry_at)
+  WHERE delivered_at IS NULL;
+
+-- Preferencias de email del creador (opt-in de notificaciones).
+-- DECISIÓN DE DISEÑO: el email NO se guarda en la tabla `users` aunque sea lo
+-- intuitivo, porque la política RLS `users_public_read USING(true)` permite al
+-- rol anon leer TODAS las columnas de users (perfil público). Meter el email ahí
+-- lo expondría como PII al público. Esta tabla aparte con RLS owner-only mantiene
+-- el email privado: solo el dueño (auth.uid()) y service_role lo leen.
+CREATE TABLE IF NOT EXISTS user_email_prefs (
+  user_id             UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  email               TEXT,
+  email_verified      BOOLEAN DEFAULT false,
+  -- Qué eventos notificar. Default: todo activado (el opt-in real es verificar el
+  -- email; sin email verificado no se envía nada).
+  email_notifications JSONB DEFAULT '{"new_subscriber": true, "new_purchase": true, "key_revoked": true}',
+  updated_at          TIMESTAMPTZ DEFAULT now()
+);
+
+-- Tokens de verificación de email (magic link). Se guarda el HASH del token, no
+-- el token en claro: si la tabla se filtra, los tokens no son utilizables. El
+-- email pendiente se guarda aquí hasta que se confirma (no se escribe en
+-- user_email_prefs hasta verificar).
+CREATE TABLE IF NOT EXISTS email_verifications (
+  token_hash  TEXT PRIMARY KEY,
+  user_id     UUID REFERENCES users(id) ON DELETE CASCADE,
+  email       TEXT NOT NULL,
+  expires_at  TIMESTAMPTZ NOT NULL,
+  created_at  TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_email_verifications_expires
+  ON email_verifications (expires_at);
+
 -- Registro de uso de API keys (rate limiting + auditoría)
 CREATE TABLE IF NOT EXISTS api_key_usage (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -194,6 +248,10 @@ CREATE INDEX IF NOT EXISTS idx_auth_nonces_expires_at ON auth_nonces (expires_at
 CREATE INDEX IF NOT EXISTS idx_transactions_creator ON transactions (creator_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_lookup
   ON subscriptions (subscriber_wallet, creator_id, active);
+-- Vista de suscriptores del creador (dashboard): filtra por creator + active y
+-- ordena por expires_at DESC. Cubre las queries de /api/subscribers.
+CREATE INDEX IF NOT EXISTS idx_subscriptions_creator_active
+  ON subscriptions (creator_id, active, expires_at DESC);
 
 -- ----------------------------- RLS -----------------------------
 
@@ -210,6 +268,17 @@ ALTER TABLE lessons             ENABLE ROW LEVEL SECURITY;
 ALTER TABLE services            ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payment_sessions    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE api_key_usage       ENABLE ROW LEVEL SECURITY;
+-- webhook_deliveries: sin policies. Solo service_role (process-webhook /
+-- retry-webhooks) la lee y escribe; ningún cliente anon/auth debe verla porque
+-- contiene la firma HMAC y el payload completo.
+ALTER TABLE webhook_deliveries  ENABLE ROW LEVEL SECURITY;
+-- user_email_prefs: solo el dueño lee/escribe sus preferencias (email privado).
+ALTER TABLE user_email_prefs     ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "owner_email_prefs" ON user_email_prefs
+  FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+-- email_verifications: sin policies. Solo service_role (API routes) la usa; los
+-- tokens hasheados nunca deben ser visibles para anon/auth.
+ALTER TABLE email_verifications  ENABLE ROW LEVEL SECURITY;
 
 -- Users: lectura pública INTENCIONAL de perfiles (username, display_name, wallet,
 -- avatar son datos públicos del creador). La escritura queda restringida al dueño.
@@ -434,6 +503,13 @@ BEGIN
 END;
 $$;
 
+-- Limpieza de tokens de verificación de email vencidos (un magic link caduca en
+-- ~30 min; no hay razón para conservarlos).
+CREATE OR REPLACE FUNCTION cleanup_expired_email_verifications()
+RETURNS void LANGUAGE sql SECURITY DEFINER AS $$
+  DELETE FROM email_verifications WHERE expires_at < now();
+$$;
+
 -- Limpieza de nonces vencidos.
 CREATE OR REPLACE FUNCTION cleanup_expired_nonces()
 RETURNS void
@@ -453,6 +529,16 @@ BEGIN
     PERFORM cron.unschedule('cleanup-nonces');
   END IF;
   PERFORM cron.schedule('cleanup-nonces', '0 * * * *', 'SELECT cleanup_expired_nonces()');
+END;
+$$;
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'cleanup-email-verifications') THEN
+    PERFORM cron.unschedule('cleanup-email-verifications');
+  END IF;
+  PERFORM cron.schedule('cleanup-email-verifications', '15 * * * *',
+    'SELECT cleanup_expired_email_verifications()');
 END;
 $$;
 
@@ -487,6 +573,40 @@ BEGIN
   END IF;
   PERFORM cron.schedule('cleanup-payment-sessions', '0 3 * * *',
     'SELECT cleanup_expired_payment_sessions()');
+END;
+$$;
+
+-- Reintento de webhooks fallidos: invoca la Edge Function retry-webhooks cada
+-- 5 minutos. La función busca webhook_deliveries pendientes cuyo next_retry_at
+-- ya venció y las reintenta con backoff. Se programa vía pg_cron + pg_net (HTTP
+-- saliente desde Postgres). Requiere configurar app.settings.retry_webhooks_url
+-- y app.settings.service_role_key, o invocarla manualmente; aquí dejamos el
+-- schedule como referencia idempotente. Si pg_net no está disponible, ejecutar
+-- la Edge Function con el scheduler nativo de Supabase Functions en su lugar.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'retry-webhooks') THEN
+    PERFORM cron.unschedule('retry-webhooks');
+  END IF;
+  -- NOTA: ajustar la URL del proyecto y el header de autorización al desplegar.
+  -- El cron real se programa desde el dashboard de Supabase Functions (Schedule)
+  -- apuntando a retry-webhooks con cron '*/5 * * * *'.
+  PERFORM cron.schedule(
+    'retry-webhooks',
+    '*/5 * * * *',
+    $cron$
+      SELECT net.http_post(
+        url := current_setting('app.settings.retry_webhooks_url', true),
+        headers := jsonb_build_object(
+          'Authorization',
+          'Bearer ' || current_setting('app.settings.service_role_key', true),
+          'Content-Type', 'application/json'
+        ),
+        body := '{}'::jsonb
+      )
+      WHERE current_setting('app.settings.retry_webhooks_url', true) IS NOT NULL;
+    $cron$
+  );
 END;
 $$;
 

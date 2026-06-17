@@ -233,9 +233,19 @@ export default function PlansPage() {
                   {!p.active ? (
                     <span className="text-white/40">desactivado</span>
                   ) : p.onchain_synced ? (
-                    <span className="text-emerald-400">● Sincronizado onchain</span>
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-emerald-400"
+                      title="Plan registrado onchain. Listo para recibir suscripciones."
+                    >
+                      ✓ Sincronizado
+                    </span>
                   ) : (
-                    <span className="text-amber-400">◔ Sincronizando…</span>
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-amber-400 animate-pulse"
+                      title="Esperando confirmación onchain. Esto puede tardar hasta 5 minutos. Refresca la página para actualizar el estado."
+                    >
+                      ◔ Sincronizando…
+                    </span>
                   )}
                 </p>
               </div>
