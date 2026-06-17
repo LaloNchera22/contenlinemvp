@@ -20,7 +20,29 @@ function nextRetryAt(attempts: number): string | null {
   return new Date(Date.now() + BACKOFF_MINUTES[idx] * 60_000).toISOString();
 }
 
+async function hmacSha256(secret: string, payload: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payload));
+  return Array.from(new Uint8Array(sig))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
 Deno.serve(async () => {
+  // Fallo cerrado: sin el secret no podemos firmar el reintento. La firma se
+  // RECALCULA sobre el cuerpo exacto que enviamos (no se reutiliza la almacenada),
+  // porque el payload se persiste como JSONB y al re-serializarlo el orden de
+  // claves/espacios puede diferir del string original firmado, lo que rompería la
+  // verificación HMAC del receptor.
+  const secret = Deno.env.get('WEBHOOK_SIGNING_SECRET');
+  if (!secret) return json({ error: 'WEBHOOK_SIGNING_SECRET no configurado' }, 500);
+
   const admin = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
@@ -29,7 +51,7 @@ Deno.serve(async () => {
   // Pendientes: no entregadas, con intentos disponibles y cuyo retry ya tocó.
   const { data: pending } = await admin
     .from('webhook_deliveries')
-    .select('id, webhook_url, payload, signature, attempts')
+    .select('id, webhook_url, payload, attempts')
     .is('delivered_at', null)
     .lt('attempts', MAX_ATTEMPTS)
     .lte('next_retry_at', new Date().toISOString())
@@ -45,10 +67,12 @@ Deno.serve(async () => {
     const payloadStr = JSON.stringify(row.payload);
     const eventId = (row.payload as { id?: string })?.id ?? row.id;
     const attempts = (row.attempts ?? 0) + 1;
+    // Firma sobre el cuerpo exacto que enviamos.
+    const signature = await hmacSha256(secret, payloadStr);
     const result = await deliver(
       row.webhook_url,
       payloadStr,
-      row.signature,
+      signature,
       `${row.id}:${attempts}`,
       eventId,
     );
