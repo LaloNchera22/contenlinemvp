@@ -3,6 +3,7 @@ import { calculateFee } from '../lib/fees';
 import { isSafeWebhookUrl, fireWebhook } from '../lib/webhook';
 import { isSafeHttpsUrl } from '../lib/url';
 import { monthlyValue, summarizeSubscribers } from '../lib/subscribers';
+import { sendEmail, notifyCreator } from '../lib/email';
 
 describe('calculateFee', () => {
   it('aplica 10% a suscripción y curso', () => {
@@ -114,6 +115,70 @@ describe('subscribers metrics', () => {
       expiringSoon: 0,
       renewalRate: 0,
     });
+  });
+});
+
+describe('email notifications', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete process.env.RESEND_API_KEY;
+  });
+
+  it('sendEmail es no-op (fallo abierto) sin RESEND_API_KEY', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+    const res = await sendEmail({ to: 'a@b.com', subject: 's', html: 'h' });
+    expect(res).toEqual({ sent: false, reason: 'no_api_key' });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  // admin mock: encadena from().select().eq().maybeSingle() devolviendo `prefs`.
+  function adminWith(prefs: unknown) {
+    return {
+      from: () => ({
+        select: () => ({
+          eq: () => ({ maybeSingle: async () => ({ data: prefs }) }),
+        }),
+      }),
+    } as never;
+  }
+
+  it('notifyCreator no envía si el email no está verificado', async () => {
+    process.env.RESEND_API_KEY = 'rk';
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+    await notifyCreator(
+      adminWith({ email: 'a@b.com', email_verified: false, email_notifications: { new_purchase: true } }),
+      'creator-1',
+      'new_purchase',
+      { subject: 's', html: 'h' },
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('notifyCreator respeta el toggle desactivado del tipo', async () => {
+    process.env.RESEND_API_KEY = 'rk';
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+    await notifyCreator(
+      adminWith({ email: 'a@b.com', email_verified: true, email_notifications: { new_purchase: false } }),
+      'creator-1',
+      'new_purchase',
+      { subject: 's', html: 'h' },
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('notifyCreator envía cuando está verificado y el tipo activado', async () => {
+    process.env.RESEND_API_KEY = 'rk';
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response('{}', { status: 200 }));
+    await notifyCreator(
+      adminWith({ email: 'a@b.com', email_verified: true, email_notifications: { new_purchase: true } }),
+      'creator-1',
+      'new_purchase',
+      { subject: 's', html: 'h' },
+    );
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls[0][0]).toBe('https://api.resend.com/emails');
   });
 });
 

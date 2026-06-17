@@ -108,7 +108,10 @@ export default async function CreatorPage({ params }: { params: { username: stri
                 priceUsdc={Number(p.price_usdc)}
               />
             ) : (
-              <p className="mt-4 text-xs text-white/60">
+              <p
+                className="mt-4 text-xs text-white/60"
+                title="El creador aún está registrando este plan onchain. Vuelve en unos minutos para suscribirte."
+              >
                 Plan no disponible para suscripción onchain todavía.
               </p>
             )}

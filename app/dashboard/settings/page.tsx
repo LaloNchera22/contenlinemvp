@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useDisconnect } from 'wagmi';
 import { useSiweAuth } from '@/lib/useSiweAuth';
 import ConfirmDialog from '@/app/components/ConfirmDialog';
+import EmailNotificationsSection from './EmailNotificationsSection';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -57,6 +58,8 @@ export default function SettingsPage() {
           Cerrar sesión
         </button>
       </div>
+
+      <EmailNotificationsSection />
 
       <div className="card mt-6 border-red-500/30">
         <h2 className="font-semibold text-red-400">Eliminar mi cuenta</h2>

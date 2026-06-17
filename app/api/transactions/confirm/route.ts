@@ -6,6 +6,7 @@ import { calculateFee, FeeCategory } from '@/lib/fees';
 import { getChain, getRpcUrl } from '@/lib/chain';
 import { checkIpRateLimit, clientIp } from '@/lib/rateLimit';
 import { fireWebhook } from '@/lib/webhook';
+import { notifyCreator } from '@/lib/email';
 
 export const runtime = 'nodejs';
 
@@ -119,6 +120,7 @@ export async function POST(req: NextRequest) {
   // webhook_url de la payment session (si el developer lo configuró al crear el
   // checkout). Se usa en el bloque 5a para notificar payment.completed.
   let webhookUrl: string | null = null;
+  let planName: string | null = null;
   // Datos diferidos para el upsert de suscripción (tras validar montos).
   let subContext: { planUuid: string; subscriber: string; expiresAt: bigint } | null = null;
 
@@ -178,13 +180,14 @@ export async function POST(req: NextRequest) {
     const onchainPlanId = ev.planId.toString();
     const { data: plan } = await admin
       .from('subscription_plans')
-      .select('id, price_usdc')
+      .select('id, price_usdc, name')
       .eq('creator_id', creator.id)
       .eq('onchain_plan_id', onchainPlanId)
       .maybeSingle();
     if (!plan) {
       return NextResponse.json({ error: 'Plan de suscripción no encontrado' }, { status: 400 });
     }
+    planName = plan.name;
     const expectedRaw = BigInt(Math.round(Number(plan.price_usdc) * 1e6));
     if (ev.amount !== expectedRaw) {
       return NextResponse.json(
@@ -260,9 +263,23 @@ export async function POST(req: NextRequest) {
         });
       }
     }
+
+    // Notificar al creador la nueva venta (best-effort, respeta sus prefs).
+    await notifyCreator(admin, creatorId, 'new_purchase', {
+      subject: `Nueva venta: $${amount.toFixed(2)} USDC`,
+      html: `<p>Recibiste una nueva venta de <strong>$${amount.toFixed(2)} USDC</strong> en la categoría <strong>${category}</strong>.</p>`,
+    });
   }
 
   // 5b. Suscripción: espejar el estado onchain en la tabla subscriptions.
+  //
+  // DECISIÓN (D.3): NO disparamos webhook al developer para subscription.created/
+  // renewed. El modelo actual asocia webhook_url a la payment_session del checkout
+  // de API, no al subscription_plan. Las suscripciones llegan desde el perfil
+  // público del creador (SubscribeButton), un flujo sin sesión de API ni
+  // webhook_url asociado, así que no hay endpoint de developer a quien notificar.
+  // Añadir webhook_url por plan queda como trabajo futuro (ver /docs y AUDIT.md).
+  // El creador sí se entera vía email (notifyCreator 'new_subscriber').
   if (subContext) {
     const expiresIso = new Date(Number(subContext.expiresAt) * 1000).toISOString();
     const { data: existingSub } = await admin
@@ -289,6 +306,13 @@ export async function POST(req: NextRequest) {
         active: true,
         expires_at: expiresIso,
         last_tx_hash: txHash,
+      });
+
+      // Solo en alta NUEVA (no en renovación/extends): notificar nuevo suscriptor.
+      const short = `${subContext.subscriber.slice(0, 6)}…${subContext.subscriber.slice(-4)}`;
+      await notifyCreator(admin, creatorId, 'new_subscriber', {
+        subject: `Nuevo suscriptor: ${short}`,
+        html: `<p>La wallet <strong>${short}</strong> se suscribió a tu plan <strong>${planName ?? ''}</strong>.</p>`,
       });
     }
   }
