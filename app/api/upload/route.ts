@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { checkIpRateLimit } from '@/lib/rateLimit';
 
 export const runtime = 'nodejs';
 
@@ -25,6 +26,17 @@ const ALLOWED_MIME = /^(image|video|audio|application\/pdf)/;
 export async function POST(req: NextRequest) {
   const session = getSessionFromRequest(req);
   if (!session) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+
+  // Cuota por usuario (no por IP): cada upload consume storage y ancho de banda.
+  // 20/día es generoso para un creador legítimo y frena la subida masiva abusiva
+  // desde una cuenta comprometida. Usamos el user_id como identificador del bucket.
+  const rl = await checkIpRateLimit(session.sub, 'upload', 20, 24 * 60 * 60);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Límite diario de subidas alcanzado (20/día)' },
+      { status: 429 },
+    );
+  }
 
   let form: FormData;
   try {

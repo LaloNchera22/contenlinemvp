@@ -7,8 +7,12 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 const NAV = [
   { href: '/dashboard', label: 'Resumen' },
   { href: '/dashboard/earnings', label: 'Ingresos' },
-  { href: '/dashboard/keys', label: 'API Keys' },
+  { href: '/dashboard/plans', label: 'Planes' },
+  { href: '/dashboard/courses', label: 'Cursos' },
+  { href: '/dashboard/services', label: 'Servicios' },
   { href: '/dashboard/content', label: 'Contenido' },
+  { href: '/dashboard/keys', label: 'API Keys' },
+  { href: '/dashboard/settings', label: 'Ajustes' },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

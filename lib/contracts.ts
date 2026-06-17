@@ -94,6 +94,27 @@ export const SUBSCRIPTION_WRITE_ABI = [
   },
 ] as const;
 
+/**
+ * ABI de administración de planes del contrato de suscripciones. La separamos de
+ * SUBSCRIPTION_WRITE_ABI (subscribe) porque setPlan solo la usa el creador desde
+ * el dashboard: mantener las dos superficies de escritura distintas evita exponer
+ * accidentalmente la gestión de planes en el flujo de suscripción del fan.
+ */
+export const SUBSCRIPTION_ADMIN_ABI = [
+  {
+    type: 'function',
+    name: 'setPlan',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'planId', type: 'uint256' },
+      { name: 'price', type: 'uint256' },
+      { name: 'durationDays', type: 'uint256' },
+      { name: 'active', type: 'bool' },
+    ],
+    outputs: [],
+  },
+] as const;
+
 /** ABI de escritura del contrato de pagos únicos (solo pay). */
 export const PAYMENT_WRITE_ABI = [
   {

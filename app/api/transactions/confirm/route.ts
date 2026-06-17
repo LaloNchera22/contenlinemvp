@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { isWhitelistedContract, PAYMENT_EVENT_ABI, SUBSCRIPTION_EVENT_ABI } from '@/lib/contracts';
 import { calculateFee, FeeCategory } from '@/lib/fees';
 import { getChain, getRpcUrl } from '@/lib/chain';
+import { checkIpRateLimit, clientIp } from '@/lib/rateLimit';
 
 export const runtime = 'nodejs';
 
@@ -39,6 +40,14 @@ const MAX_AMOUNT_RAW = 100_000n * 1_000_000n;
  * txHash.
  */
 export async function POST(req: NextRequest) {
+  // El endpoint es público por diseño (cualquiera confirma su propia tx). Sin un
+  // tope por IP, un atacante podría inundarlo y agotar las llamadas al RPC. 30/min
+  // es holgado para un usuario real (una tx tarda más que eso en confirmarse).
+  const rl = await checkIpRateLimit(clientIp(req), 'confirm', 30, 60);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'Demasiadas solicitudes; intenta más tarde' }, { status: 429 });
+  }
+
   let body: { txHash?: string };
   try {
     body = await req.json();

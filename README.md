@@ -58,11 +58,14 @@ Copia las direcciones desplegadas a `NEXT_PUBLIC_CONTRACT_SUBSCRIPTION` y `NEXT_
 
 ### Edge Functions
 
+Las API Routes de Next son la fuente de verdad de la lógica de negocio (incluida
+la confirmación de transacciones en `/api/transactions/confirm`). Las Edge
+Functions quedan reservadas para crons y webhooks invocados desde Supabase:
+
 ```bash
-supabase functions deploy verify-siwe
 supabase functions deploy validate-api-key
-supabase functions deploy confirm-transaction
 supabase functions deploy sync-subscriptions   # cron: 0 * * * *
+supabase functions deploy sync-plans-onchain    # cron: */5 * * * *  (fallback del webhook PlanSet)
 supabase functions deploy process-webhook
 ```
 
@@ -70,7 +73,7 @@ supabase functions deploy process-webhook
 
 1. **SIWE** — nonce de un solo uso (5 min) en DB, firma verificada con `viem.verifyMessage`, JWT con claim `wallet`.
 2. **RLS** en todas las tablas (ver `schema.sql`).
-3. **Validación onchain** — `confirm-transaction` verifica status, whitelist de contratos, evento e idempotencia por `tx_hash`.
+3. **Validación onchain** — `/api/transactions/confirm` verifica status, whitelist de contratos, evento e idempotencia por `tx_hash`.
 4. **API keys hasheadas** (SHA-256), prefix en claro, key completa visible una sola vez, rate limit 100/min + auditoría de uso.
 5. **Signed URLs** (15 min) para contenido exclusivo en bucket privado; solo si RLS confirma acceso.
 6. **Headers de seguridad** (CSP, X-Frame-Options, etc.) en `next.config.js`.
