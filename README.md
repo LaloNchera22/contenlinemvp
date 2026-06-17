@@ -104,3 +104,25 @@ Definido en `lib/fees.ts` y replicado en los contratos:
 | course | 10% |
 | service | 3% |
 | onchain | 3% |
+
+## Production checklist
+
+Antes de desplegar a mainnet de Polygon, verificar:
+
+- [ ] Auditoría externa de contratos completada (Trail of Bits / Spearbit / Cantina)
+- [ ] Bug bounty activo en Immunefi (mínimo 30 días)
+- [ ] Owner de contratos = Gnosis Safe multisig 3/5
+- [ ] Timelock de 48h en funciones admin
+- [ ] Variables de entorno productivas configuradas (no usar fallbacks)
+- [ ] SUPABASE_JWT_SECRET con entropía mínima de 256 bits
+- [ ] WEBHOOK_SIGNING_SECRET configurado en producción
+- [ ] Backups automáticos de Supabase habilitados
+- [ ] Monitoreo configurado (Sentry para Next, Logflare para Edge Functions)
+- [ ] Política de retención de logs definida
+- [ ] Plan de respuesta a incidentes documentado
+
+## Docs para developers
+
+La guía de integración de la API de pagos (obtener una key, ejemplos en
+curl/Node.js/Python, payload y verificación HMAC del webhook, event types) está
+publicada en la app en `/docs` (`app/docs/page.tsx`).

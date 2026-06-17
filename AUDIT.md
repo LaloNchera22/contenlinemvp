@@ -28,8 +28,8 @@ Estado de los hallazgos de la auditoría exhaustiva (commit base `96fdf19`).
 | Hardcoded mainnet en publicClient | ✅ Resuelto | `lib/chain.ts` (`getChain`/`getRpcUrl`) según `NEXT_PUBLIC_CHAIN_ID`; Edge Function lee `CHAIN_ID`. |
 | Faltan INSERT policies de Storage + upload | ✅ Resuelto | Policies `service_role` para buckets privados + endpoint `POST /api/upload`. |
 | Falta middleware de protección de `/dashboard` | ✅ Resuelto | `middleware.ts` verifica el JWT (Web Crypto) y redirige si no hay sesión. |
-| Sin tests de API/lib | ✅ Parcial | Vitest + `test/lib.test.ts` (fees, jwt, webhook, url). `npm test`. |
-| Doble implementación API Routes vs Edge Functions | 🟡 Decisión + alineado | **Decisión:** las API Routes de Next son la fuente de verdad; las Edge Functions quedan para crons/webhooks/uso desde Supabase. Se alineó la lógica de `confirm-transaction` (api_key_id, selección de red). Consolidación total pendiente. |
+| Sin tests de API/lib | ✅ Resuelto (`b49850b`) | Cobertura con thresholds (lib 60% / app/api 50%): `validateApiKey`, `whitelist`, `confirm-flow`, `checkout`, `crud`, `lib-extra` + helper de mock. Resultado: lib ~88%, 65 tests vitest + 7 hardhat. `npm run test:coverage`. |
+| Doble implementación API Routes vs Edge Functions | ✅ Resuelto (`ba4f5e9`) | Se eliminó la Edge Function `confirm-transaction`; las API Routes quedan como única fuente de verdad. README actualizado (solo validate-api-key, sync-subscriptions, sync-plans-onchain, process-webhook). |
 
 ## 🎨 UI/UX
 
@@ -50,7 +50,7 @@ Estado de los hallazgos de la auditoría exhaustiva (commit base `96fdf19`).
 | Age-gate NSFW | 🔒 Decisión (BLOQUE 3.3): se **prohíbe** el contenido sexualmente explícito hasta integrar KYC de creadores adultos. Términos §4 actualizado; `AgeGate` deshabilitado (no se renderiza, código conservado); el flag `is_adult` se mantiene en schema (sin UI que lo active) para uso futuro. |
 | Right to Erasure | ✅ Resuelto (`DELETE /api/me` anonimiza PII y desactiva keys). |
 | Reportes contables | ✅ Resuelto (`GET /api/transactions/export` CSV). |
-| Accesibilidad (aria/roles) | ✅ Parcial (roles/labels en formularios, tablas y modales clave). |
+| Accesibilidad (aria/roles) | ✅ Parcial → reforzado (`dacc38a`): toasts con `role="alert"`/`role="status"`, `ConfirmDialog` con `role="dialog"`/`aria-modal`/Escape, skeletons con `role="status"`. |
 | Internacionalización (i18n) | ⏳ Pendiente — requiere integrar next-intl y extraer todos los strings; se documenta como trabajo siguiente. |
 | Pista de auditoría visible al creador | ⏳ Pendiente. |
 
@@ -65,3 +65,76 @@ Estado de los hallazgos de la auditoría exhaustiva (commit base `96fdf19`).
   2257 (EE. UU.) / DSA (UE). Hasta entonces, prohibido por Términos §4.
 - Activación de analítica con consentimiento (el banner ya lo contempla).
 - UI de historial/auditoría de cambios para el creador.
+
+---
+
+# Remediación testnet → mainnet (BLOQUES 1–4)
+
+Segunda ronda de remediación para llevar el MVP de "apto para testnet" a "listo
+para mainnet". Commits: BLOQUE 1 `ba4f5e9`, BLOQUE 2 `dacc38a`, BLOQUE 3 `b49850b`.
+
+## BLOQUE 1 — Bloqueadores de soft-launch (`ba4f5e9`)
+
+| Item | Estado | Detalle |
+|------|--------|---------|
+| 1.1 CRUD del creador | ✅ Resuelto | Endpoints `plans`/`courses`(+`publish`)/`services` con validación; UI de dashboard; `SUBSCRIPTION_ADMIN_ABI` (`setPlan`); columna `onchain_synced` + Edge Function `sync-plans-onchain` (evento `PlanSet`). |
+| 1.2 Confirmación de acciones destructivas | ✅ Resuelto | `ConfirmDialog` reusable (type-to-confirm) en revoke key, eliminar cuenta, delete plan/curso/servicio y logout. |
+| 1.3 Rate limiting endpoints públicos | ✅ Resuelto | `lib/rateLimit.ts` + tabla `ip_rate_limit` + `check_ip_rate_limit` (advisory lock). confirm 30/min, nonce 10/min, upload 20/día. |
+| 1.4 Límites de longitud | ✅ Resuelto | CHECK idempotentes en schema (users/content/plans/courses/services) + validación en API (`lib/validation.ts`). |
+| 1.5 Cleanup payment_sessions | ✅ Resuelto | `cleanup_expired_payment_sessions()` + cron diario. |
+| 1.6 Feed del fan | ✅ Resuelto | `/[username]` con contenido reciente; exclusivo bloqueado con blur+candado; `ContentItem` (signed URL + 403). |
+| 1.7 Dedup confirm-transaction | ✅ Resuelto | Edge Function eliminada; README actualizado. |
+
+## BLOQUE 2 — UX/usabilidad (`dacc38a`)
+
+| Item | Estado | Detalle |
+|------|--------|---------|
+| 2.1 Loading skeletons | ✅ Resuelto | `Skeleton`/`Text`/`Card`/`Row` en dashboard, earnings, keys, plans/courses/services y `loading.tsx` del perfil. |
+| 2.2 Páginas de error custom | ✅ Resuelto | `error.tsx` (sin stack en prod), `global-error.tsx`, `not-found.tsx`. |
+| 2.3 Empty states con CTA | ✅ Resuelto | `EmptyState` (SVG + CTA) en keys, plans, courses, services. |
+| 2.4 Sync wallet ↔ sesión | ✅ Resuelto | `useAuthSync` cierra sesión si la wallet deja de coincidir (tolera reconexión de wagmi). |
+| 2.5 Toasts persistentes | ✅ Resuelto | `ToastProvider`/`useToast`; reemplazan el status inline de SubscribeButton y CheckoutClient (sobreviven al popup de wallet). |
+
+## BLOQUE 3 — Hardening pre-mainnet (`b49850b`)
+
+| Item | Estado | Detalle |
+|------|--------|---------|
+| 3.1 Multisig + timelock | ✅ Resuelto | `OwnableWithTimelock` (delay 48h, propuesta→ejecución atada al valor) en ambos contratos; eventos `FeeUpdateProposed`/`FeeUpdateExecuted`; `scripts/deploy-with-multisig.ts` con verificación; README "Mainnet deployment". |
+| 3.2 Cobertura de tests ≥60% | ✅ Resuelto | lib ~88%, app/api ≥50%; 65 tests vitest + 7 hardhat; `test:coverage` con thresholds por glob. |
+| 3.3 Decisión contenido adulto | ✅ Resuelto | Prohibido contenido explícito hasta KYC (Términos §4); `AgeGate` deshabilitado; `is_adult` conservado sin UI. |
+
+## BLOQUE 4 — Documentación y operaciones
+
+| Item | Estado | Detalle |
+|------|--------|---------|
+| 4.1 Actualizar AUDIT.md | ✅ Resuelto | Este documento. |
+| 4.2 Production checklist | ✅ Resuelto | Sección "Production checklist" en README. |
+| 4.3 Docs del developer | ✅ Resuelto | `app/docs/page.tsx`: obtener key, ejemplos curl/Node/Python, payload del webhook, verificación HMAC, event types y códigos de respuesta. |
+
+## Pendientes que siguen abiertos (no en alcance de estos bloques)
+
+- i18n (next-intl) y extracción de strings.
+- Integración de KYC para rehabilitar contenido adulto.
+- UI de historial/auditoría de cambios para el creador.
+- Activación de analítica con consentimiento.
+- **Operacional (requiere terceros, ver Production checklist):** auditoría externa
+  de contratos, bug bounty, despliegue del Gnosis Safe 3/5, monitoreo (Sentry/Logflare),
+  backups y plan de respuesta a incidentes.
+
+## Score de production-readiness (estimado)
+
+| Dimensión | Antes (testnet) | Después (estos bloques) |
+|-----------|:---:|:---:|
+| Funcionalidad core (creador puede operar) | 5/10 | 9/10 |
+| Seguridad técnica | 7/10 | 8.5/10 |
+| Contratos / gobernanza onchain | 6/10 | 8/10 *(falta auditoría externa + multisig real)* |
+| UX / accesibilidad | 6/10 | 8.5/10 |
+| Calidad / tests | 4/10 | 8/10 |
+| Cumplimiento normativo | 6/10 | 7.5/10 |
+| Operaciones / observabilidad | 3/10 | 5/10 *(checklist definido, falta ejecutarlo)* |
+| **Global** | **≈5.4/10 (apto testnet)** | **≈7.8/10 (apto soft-launch; mainnet tras checklist)** |
+
+**Veredicto:** listo para **soft-launch / mainnet limitada**. El salto a mainnet
+plena queda condicionado a ejecutar el *Production checklist* (auditoría externa de
+contratos, bug bounty, Gnosis Safe 3/5 como owner, monitoreo y backups) — items que
+dependen de terceros y de infraestructura productiva, no de código.
