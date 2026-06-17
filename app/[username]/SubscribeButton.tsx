@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount, useWriteContract, usePublicClient } from 'wagmi';
 import { CONTRACTS, ERC20_ABI, SUBSCRIPTION_WRITE_ABI } from '@/lib/contracts';
+import { useToast } from '@/app/components/Toast';
 
 /**
  * Botón de suscripción. Dispara el flujo onchain completo:
@@ -26,25 +27,27 @@ export default function SubscribeButton({
   const { isConnected } = useAccount();
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();
-  const [status, setStatus] = useState<string | null>(null);
+  const toast = useToast();
   const [busy, setBusy] = useState(false);
 
   async function subscribe() {
     if (!publicClient) {
-      setStatus('No hay conexión con la red.');
+      toast.error('No hay conexión con la red.');
       return;
     }
     if (!CONTRACTS.subscription) {
-      setStatus('Contrato de suscripciones no configurado.');
+      toast.error('Contrato de suscripciones no configurado.');
       return;
     }
     setBusy(true);
+    // Toast persistente que vamos actualizando por cada paso. Sobrevive al popup
+    // de la wallet (que roba el foco) y mantiene el contexto del flujo multi-tx.
+    const id = toast.loading('Aprueba el gasto de USDC en tu wallet…');
     try {
       const amountRaw = BigInt(Math.round(priceUsdc * 1e6)); // USDC, 6 decimales
       const planId = BigInt(onchainPlanId);
 
       // 1. Aprobar gasto de USDC al contrato de suscripciones.
-      setStatus('Aprueba el gasto de USDC en tu wallet…');
       const approveHash = await writeContractAsync({
         address: CONTRACTS.usdc,
         abi: ERC20_ABI,
@@ -54,14 +57,14 @@ export default function SubscribeButton({
       await publicClient.waitForTransactionReceipt({ hash: approveHash });
 
       // 2. Suscribirse (el contrato cobra el precio del plan y reparte el fee).
-      setStatus('Confirma la suscripción en tu wallet…');
+      toast.update(id, 'loading', 'Confirma la suscripción en tu wallet…');
       const txHash = await writeContractAsync({
         address: CONTRACTS.subscription,
         abi: SUBSCRIPTION_WRITE_ABI,
         functionName: 'subscribe',
         args: [creatorWallet as `0x${string}`, planId],
       });
-      setStatus('Esperando confirmación onchain…');
+      toast.update(id, 'loading', 'Esperando confirmación onchain…');
       await publicClient.waitForTransactionReceipt({ hash: txHash });
 
       // 3. Confirmar en el backend (verifica el evento y espeja en DB).
@@ -72,13 +75,13 @@ export default function SubscribeButton({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setStatus(data.error ?? 'La suscripción se hizo onchain pero falló la confirmación.');
+        toast.update(id, 'error', data.error ?? 'La suscripción se hizo onchain pero falló la confirmación.');
         return;
       }
-      setStatus('¡Suscripción activa! 🎉');
+      toast.update(id, 'success', '¡Suscripción activa! 🎉');
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Error en la transacción';
-      setStatus(/user rejected|denied/i.test(msg) ? 'Cancelaste la transacción.' : msg);
+      toast.update(id, 'error', /user rejected|denied/i.test(msg) ? 'Cancelaste la transacción.' : msg);
     } finally {
       setBusy(false);
     }
@@ -97,11 +100,6 @@ export default function SubscribeButton({
       <button onClick={subscribe} disabled={busy} className="btn-primary w-full">
         {busy ? 'Procesando…' : 'Suscribirme'}
       </button>
-      {status && (
-        <p className="mt-2 text-xs text-white/70" role="status" aria-live="polite">
-          {status}
-        </p>
-      )}
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { SkeletonCard } from '@/app/components/Skeleton';
 
 interface Metrics {
   grossRevenue: number;
@@ -36,12 +37,22 @@ export default function DashboardHome() {
 
       {error && <p className="mt-6 text-sm text-amber-400" role="alert">{error}</p>}
 
-      <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Stat label="Ingreso bruto" value={metrics ? usd(metrics.grossRevenue) : '—'} />
-        <Stat label="Ingreso neto" value={metrics ? usd(metrics.netRevenue) : '—'} highlight />
-        <Stat label="Comisiones" value={metrics ? usd(metrics.totalFees) : '—'} />
-        <Stat label="Suscriptores activos" value={metrics ? String(metrics.activeSubscribers) : '—'} />
-      </div>
+      {/* Mientras llegan las métricas (sin error) mostramos skeletons en vez de
+          '—', para no aparentar que los ingresos son cero antes de cargar. */}
+      {!metrics && !error ? (
+        <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4" role="status" aria-label="Cargando métricas">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+      ) : (
+        <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Stat label="Ingreso bruto" value={metrics ? usd(metrics.grossRevenue) : '—'} />
+          <Stat label="Ingreso neto" value={metrics ? usd(metrics.netRevenue) : '—'} highlight />
+          <Stat label="Comisiones" value={metrics ? usd(metrics.totalFees) : '—'} />
+          <Stat label="Suscriptores activos" value={metrics ? String(metrics.activeSubscribers) : '—'} />
+        </div>
+      )}
 
       {isNewCreator && (
         <div className="mt-10">

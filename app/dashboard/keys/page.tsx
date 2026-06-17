@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import ConfirmDialog from '@/app/components/ConfirmDialog';
+import EmptyState from '@/app/components/EmptyState';
+import { SkeletonCard } from '@/app/components/Skeleton';
 
 interface ApiKey {
   id: string;
@@ -23,6 +25,7 @@ export default function KeysPage() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [toRevoke, setToRevoke] = useState<ApiKey | null>(null);
+  const [loadingList, setLoadingList] = useState(true);
 
   async function load() {
     const r = await fetch('/api/keys');
@@ -30,6 +33,7 @@ export default function KeysPage() {
       const d = await r.json();
       setKeys(d.keys ?? []);
     }
+    setLoadingList(false);
   }
 
   useEffect(() => {
@@ -140,29 +144,41 @@ export default function KeysPage() {
       </div>
 
       <div className="mt-6 space-y-2">
-        {keys.map((k) => (
-          <div key={k.id} className="card flex items-center justify-between">
-            <div>
-              <p className="font-medium">
-                {k.name}{' '}
-                <span className="text-xs text-white/60">({k.environment})</span>
-              </p>
-              <p className="font-mono text-xs text-white/60">
-                {k.key_prefix}••••••• · {k.calls_count} llamadas
-                {k.volume_usdc != null && ` · $${Number(k.volume_usdc).toFixed(2)} USDC`}
-              </p>
-            </div>
-            {k.active ? (
-              <button onClick={() => setToRevoke(k)} className="btn-ghost text-red-400">
-                Revocar
-              </button>
-            ) : (
-              <span className="text-xs text-white/40">revocada</span>
-            )}
+        {loadingList ? (
+          <div className="space-y-2" role="status" aria-label="Cargando keys">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
           </div>
-        ))}
-        {keys.length === 0 && (
-          <p className="text-sm text-white/60">No tienes keys todavía.</p>
+        ) : keys.length === 0 ? (
+          <EmptyState
+            title="Aún no tienes API keys"
+            description="Genera tu primera key para integrar pagos cripto en tu app, estilo Stripe. La key completa se muestra una sola vez."
+            actionLabel="Crear mi primera key"
+            onAction={() => document.getElementById('key-name')?.focus()}
+          />
+        ) : (
+          keys.map((k) => (
+            <div key={k.id} className="card flex items-center justify-between">
+              <div>
+                <p className="font-medium">
+                  {k.name}{' '}
+                  <span className="text-xs text-white/60">({k.environment})</span>
+                </p>
+                <p className="font-mono text-xs text-white/60">
+                  {k.key_prefix}••••••• · {k.calls_count} llamadas
+                  {k.volume_usdc != null && ` · $${Number(k.volume_usdc).toFixed(2)} USDC`}
+                </p>
+              </div>
+              {k.active ? (
+                <button onClick={() => setToRevoke(k)} className="btn-ghost text-red-400">
+                  Revocar
+                </button>
+              ) : (
+                <span className="text-xs text-white/40">revocada</span>
+              )}
+            </div>
+          ))
         )}
       </div>
 

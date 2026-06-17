@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useAuthSync } from '@/lib/useAuthSync';
 
 const NAV = [
   { href: '/dashboard', label: 'Resumen' },
@@ -17,6 +18,8 @@ const NAV = [
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  // Cierra la sesión si la wallet conectada deja de coincidir con la de la cookie.
+  useAuthSync();
 
   return (
     <div className="flex min-h-screen">

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import ConfirmDialog from '@/app/components/ConfirmDialog';
+import EmptyState from '@/app/components/EmptyState';
+import { SkeletonRow } from '@/app/components/Skeleton';
 
 interface Service {
   id: string;
@@ -111,12 +113,16 @@ export default function ServicesPage() {
 
       <div className="mt-6 space-y-2">
         {loading ? (
-          <p className="text-sm text-white/60">Cargando servicios…</p>
-        ) : services.length === 0 ? (
-          <div className="card text-center py-10">
-            <p className="font-medium">Aún no tienes servicios</p>
-            <p className="text-sm text-white/60 mt-1">Crea tu primer servicio para ofrecerlo a tu audiencia.</p>
+          <div className="space-y-2" role="status" aria-label="Cargando servicios">
+            {Array.from({ length: 3 }).map((_, i) => <SkeletonRow key={i} />)}
           </div>
+        ) : services.length === 0 ? (
+          <EmptyState
+            title="Aún no tienes servicios"
+            description="Crea tu primer servicio para ofrecerlo a tu audiencia."
+            actionLabel="Crear mi primer servicio"
+            onAction={() => document.getElementById('s-title')?.focus()}
+          />
         ) : (
           services.map((s) => (
             <div key={s.id} className="card flex items-center justify-between gap-3">

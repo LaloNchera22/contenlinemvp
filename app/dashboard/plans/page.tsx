@@ -5,6 +5,8 @@ import { useAccount, useWriteContract, usePublicClient } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { CONTRACTS, SUBSCRIPTION_ADMIN_ABI } from '@/lib/contracts';
 import ConfirmDialog from '@/app/components/ConfirmDialog';
+import EmptyState from '@/app/components/EmptyState';
+import { SkeletonRow } from '@/app/components/Skeleton';
 
 interface Plan {
   id: string;
@@ -211,14 +213,16 @@ export default function PlansPage() {
 
       <div className="mt-6 space-y-2">
         {loading ? (
-          <p className="text-sm text-white/60">Cargando planes…</p>
-        ) : plans.length === 0 ? (
-          <div className="card text-center py-10">
-            <p className="font-medium">Aún no tienes planes</p>
-            <p className="text-sm text-white/60 mt-1">
-              Define tu primer plan para empezar a recibir suscripciones.
-            </p>
+          <div className="space-y-2" role="status" aria-label="Cargando planes">
+            {Array.from({ length: 3 }).map((_, i) => <SkeletonRow key={i} />)}
           </div>
+        ) : plans.length === 0 ? (
+          <EmptyState
+            title="Aún no tienes planes"
+            description="Define tu primer plan para empezar a recibir suscripciones."
+            actionLabel="Crear mi primer plan"
+            onAction={() => document.getElementById('p-name')?.focus()}
+          />
         ) : (
           plans.map((p) => (
             <div key={p.id} className="card flex items-center justify-between gap-3">

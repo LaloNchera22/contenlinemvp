@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { FEE_CONFIG } from '@/lib/fees';
+import { SkeletonRow } from '@/app/components/Skeleton';
 
 interface Tx {
   id: string;
@@ -60,7 +61,13 @@ export default function EarningsPage() {
         ))}
       </div>
 
-      {loading && <p className="mt-6 text-sm text-white/60">Cargando…</p>}
+      {loading && (
+        <div className="mt-6 space-y-3" role="status" aria-label="Cargando transacciones">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <SkeletonRow key={i} />
+          ))}
+        </div>
+      )}
       {!loading && txs.length === 0 && (
         <p className="mt-6 text-sm text-white/60">Sin transacciones todavía.</p>
       )}

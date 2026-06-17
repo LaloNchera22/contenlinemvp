@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import ConfirmDialog from '@/app/components/ConfirmDialog';
+import EmptyState from '@/app/components/EmptyState';
+import { SkeletonRow } from '@/app/components/Skeleton';
 
 interface Course {
   id: string;
@@ -124,12 +126,16 @@ export default function CoursesPage() {
 
       <div className="mt-6 space-y-2">
         {loading ? (
-          <p className="text-sm text-white/60">Cargando cursos…</p>
-        ) : courses.length === 0 ? (
-          <div className="card text-center py-10">
-            <p className="font-medium">Aún no tienes cursos</p>
-            <p className="text-sm text-white/60 mt-1">Crea tu primer curso y publícalo cuando esté listo.</p>
+          <div className="space-y-2" role="status" aria-label="Cargando cursos">
+            {Array.from({ length: 3 }).map((_, i) => <SkeletonRow key={i} />)}
           </div>
+        ) : courses.length === 0 ? (
+          <EmptyState
+            title="Aún no tienes cursos"
+            description="Crea tu primer curso y publícalo cuando esté listo para venderse."
+            actionLabel="Crear mi primer curso"
+            onAction={() => document.getElementById('c-title')?.focus()}
+          />
         ) : (
           courses.map((c) => (
             <div key={c.id} className="card flex items-center justify-between gap-3">
