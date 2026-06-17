@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import ConfirmDialog from '@/app/components/ConfirmDialog';
 
 interface ApiKey {
   id: string;
@@ -21,6 +22,7 @@ export default function KeysPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [toRevoke, setToRevoke] = useState<ApiKey | null>(null);
 
   async function load() {
     const r = await fetch('/api/keys');
@@ -72,7 +74,10 @@ export default function KeysPage() {
     }
   }
 
-  async function revoke(id: string) {
+  async function confirmRevoke() {
+    if (!toRevoke) return;
+    const id = toRevoke.id;
+    setToRevoke(null);
     await fetch(`/api/keys/${id}`, { method: 'DELETE' });
     load();
   }
@@ -148,7 +153,7 @@ export default function KeysPage() {
               </p>
             </div>
             {k.active ? (
-              <button onClick={() => revoke(k.id)} className="btn-ghost text-red-400">
+              <button onClick={() => setToRevoke(k)} className="btn-ghost text-red-400">
                 Revocar
               </button>
             ) : (
@@ -160,6 +165,25 @@ export default function KeysPage() {
           <p className="text-sm text-white/60">No tienes keys todavía.</p>
         )}
       </div>
+
+      <ConfirmDialog
+        open={toRevoke !== null}
+        title="Revocar API key"
+        danger
+        confirmText="Revocar"
+        // Pedimos teclear el nombre exacto: una key revocada por error rompe la
+        // integración del developer al instante, así que añadimos fricción.
+        requireTypeConfirmation={toRevoke?.name}
+        description={
+          <>
+            La key <strong>{toRevoke?.name}</strong> dejará de funcionar de inmediato y
+            las integraciones que la usen empezarán a recibir 401. Esta acción no se
+            puede deshacer. Escribe el nombre de la key para confirmar.
+          </>
+        }
+        onCancel={() => setToRevoke(null)}
+        onConfirm={confirmRevoke}
+      />
     </div>
   );
 }

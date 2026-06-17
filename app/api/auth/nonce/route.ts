@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isAddress, getAddress } from 'viem';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { generateNonce, buildSiweMessage, NONCE_TTL_MS } from '@/lib/siwe';
+import { checkIpRateLimit, clientIp } from '@/lib/rateLimit';
 
 export const runtime = 'nodejs';
 
@@ -14,6 +15,14 @@ const MAX_ACTIVE_NONCES = 5;
  * Genera un nonce de un solo uso (5 min) y devuelve el mensaje SIWE a firmar.
  */
 export async function POST(req: NextRequest) {
+  // Defensa adicional anti-DoS por IP. El tope por wallet (MAX_ACTIVE_NONCES) ya
+  // limita el spam de una wallet concreta, pero un atacante puede rotar wallets;
+  // 10/min por IP corta la enumeración masiva desde un mismo origen.
+  const rl = await checkIpRateLimit(clientIp(req), 'nonce', 10, 60);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'Demasiadas solicitudes; intenta más tarde' }, { status: 429 });
+  }
+
   let body: { wallet?: string };
   try {
     body = await req.json();

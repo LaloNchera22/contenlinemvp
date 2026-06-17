@@ -58,6 +58,12 @@ CREATE TABLE IF NOT EXISTS subscription_plans (
   -- se pasa a setPlan()/subscribe() y el que confirm-transaction usa para
   -- mapear el evento Subscribed.planId de vuelta a este plan.
   onchain_plan_id BIGINT GENERATED ALWAYS AS IDENTITY UNIQUE,
+  -- Refleja si el plan ya quedó registrado onchain (evento PlanSet observado).
+  -- La fila se crea en DB ANTES de la tx onchain (necesitamos el onchain_plan_id
+  -- para llamar a setPlan), así que arranca en false y la Edge Function
+  -- sync-plans-onchain la marca true al ver el evento. La UI muestra "Sincronizando…"
+  -- mientras tanto para que el creador sepa que el plan aún no acepta suscripciones.
+  onchain_synced BOOLEAN DEFAULT false,
   created_at    TIMESTAMPTZ DEFAULT now()
 );
 
@@ -169,6 +175,20 @@ CREATE TABLE IF NOT EXISTS api_key_usage (
 
 CREATE INDEX IF NOT EXISTS idx_api_key_usage_window
   ON api_key_usage (api_key_id, created_at DESC);
+
+-- Rate limiting por IP (o por identificador genérico, p. ej. user_id) para los
+-- endpoints públicos/sin API key. api_key_usage cubre las keys; esta tabla cubre
+-- el tráfico anónimo (confirm, nonce) y cuotas por usuario (uploads).
+CREATE TABLE IF NOT EXISTS ip_rate_limit (
+  id         SERIAL PRIMARY KEY,
+  ip         TEXT NOT NULL,
+  bucket     TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_ip_rate_limit_lookup
+  ON ip_rate_limit (ip, bucket, created_at DESC);
+ALTER TABLE ip_rate_limit ENABLE ROW LEVEL SECURITY;
+-- Sin policies: solo service_role (Edge Functions / API routes) la usa.
 -- Acelera la búsqueda de nonces vencidos y su limpieza (evita degradación y enumeración).
 CREATE INDEX IF NOT EXISTS idx_auth_nonces_expires_at ON auth_nonces (expires_at);
 CREATE INDEX IF NOT EXISTS idx_transactions_creator ON transactions (creator_id, created_at DESC);
@@ -335,6 +355,49 @@ BEGIN
 END;
 $$;
 
+-- Rate limiting ATÓMICO por IP (o identificador genérico). Mismo patrón que
+-- check_and_log_api_usage: un advisory lock por hash(ip+bucket) serializa el
+-- conteo + inserción dentro de la tx, cerrando la race condition de leer el
+-- contador y registrar en pasos separados. El bucket separa cuotas por endpoint
+-- (p. ej. 'confirm', 'nonce', 'upload') para que no compitan entre sí.
+CREATE OR REPLACE FUNCTION check_ip_rate_limit(
+  p_ip       TEXT,
+  p_bucket   TEXT,
+  p_limit    INT,
+  p_window_sec INT
+)
+RETURNS TABLE(allowed BOOLEAN, request_count INT)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  c INT;
+BEGIN
+  -- hashtext de la concatenación ip+bucket: serializa solo a quienes comparten
+  -- ambos, sin bloquear el resto del tráfico.
+  PERFORM pg_advisory_xact_lock(hashtext(p_ip || ':' || p_bucket));
+
+  SELECT count(*) INTO c
+  FROM ip_rate_limit
+  WHERE ip = p_ip
+    AND bucket = p_bucket
+    AND created_at >= now() - make_interval(secs => p_window_sec);
+
+  IF c >= p_limit THEN
+    RETURN QUERY SELECT false, c;
+  ELSE
+    INSERT INTO ip_rate_limit(ip, bucket) VALUES (p_ip, p_bucket);
+    RETURN QUERY SELECT true, c + 1;
+  END IF;
+END;
+$$;
+
+-- Limpieza de registros de rate limiting antiguos (la ventana más larga es 1 día).
+CREATE OR REPLACE FUNCTION cleanup_ip_rate_limit()
+RETURNS void LANGUAGE sql SECURITY DEFINER AS $$
+  DELETE FROM ip_rate_limit WHERE created_at < now() - INTERVAL '2 days';
+$$;
+
 -- Creación de nonce con límite por wallet (anti-spam / anti-enumeración).
 -- /api/auth/nonce no requiere autenticación previa, así que sin un tope cualquiera
 -- podría inundar auth_nonces con millones de filas. Un advisory lock por wallet
@@ -393,6 +456,40 @@ BEGIN
 END;
 $$;
 
+-- Limpieza diaria de los registros de rate limiting por IP (evita crecimiento
+-- indefinido de ip_rate_limit). Idempotente: re-crea el schedule si ya existía.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'cleanup-ip-rate-limit') THEN
+    PERFORM cron.unschedule('cleanup-ip-rate-limit');
+  END IF;
+  PERFORM cron.schedule('cleanup-ip-rate-limit', '30 3 * * *', 'SELECT cleanup_ip_rate_limit()');
+END;
+$$;
+
+-- Cierre de payment_sessions vencidas. Una sesión 'pending' que pasó su expires_at
+-- nunca se completará (el checkout caducó); marcarla 'expired' evita que figure como
+-- pendiente para siempre. Tras 90 días se borra el histórico de expiradas para no
+-- acumular filas muertas. SECURITY DEFINER porque el cron corre sin rol de usuario.
+CREATE OR REPLACE FUNCTION cleanup_expired_payment_sessions()
+RETURNS void LANGUAGE sql SECURITY DEFINER AS $$
+  UPDATE payment_sessions
+    SET status = 'expired'
+    WHERE status = 'pending' AND expires_at < now();
+  DELETE FROM payment_sessions
+    WHERE status = 'expired' AND expires_at < now() - INTERVAL '90 days';
+$$;
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'cleanup-payment-sessions') THEN
+    PERFORM cron.unschedule('cleanup-payment-sessions');
+  END IF;
+  PERFORM cron.schedule('cleanup-payment-sessions', '0 3 * * *',
+    'SELECT cleanup_expired_payment_sessions()');
+END;
+$$;
+
 -- ----------------------- MIGRACIONES IDEMPOTENTES -----------------------
 -- Para bases de datos creadas antes de estas columnas/constraints. CREATE TABLE
 -- IF NOT EXISTS no altera tablas ya existentes, así que las aplicamos aquí.
@@ -405,6 +502,14 @@ BEGIN
   ) THEN
     ALTER TABLE subscription_plans
       ADD COLUMN onchain_plan_id BIGINT GENERATED ALWAYS AS IDENTITY UNIQUE;
+  END IF;
+
+  -- subscription_plans.onchain_synced (estado de sincronización con el contrato)
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'subscription_plans' AND column_name = 'onchain_synced'
+  ) THEN
+    ALTER TABLE subscription_plans ADD COLUMN onchain_synced BOOLEAN DEFAULT false;
   END IF;
 
   -- users.is_adult / content.is_adult (age-gate de contenido adulto)
@@ -427,6 +532,40 @@ BEGIN
   ) THEN
     ALTER TABLE users
       ADD CONSTRAINT users_username_format CHECK (username ~ '^[a-z0-9_]{3,32}$');
+  END IF;
+
+  -- Límites de longitud de strings de usuario (defensa contra payloads gigantes
+  -- que inflan la tabla y la UI). Espejo de lib/validation.ts (LIMITS). Cada CHECK
+  -- se añade solo si no existe, para no romper despliegues previos.
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'users_display_name_len') THEN
+    ALTER TABLE users ADD CONSTRAINT users_display_name_len CHECK (length(display_name) <= 60);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'users_bio_len') THEN
+    ALTER TABLE users ADD CONSTRAINT users_bio_len CHECK (bio IS NULL OR length(bio) <= 500);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'content_title_len') THEN
+    ALTER TABLE content ADD CONSTRAINT content_title_len CHECK (length(title) <= 200);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'content_body_len') THEN
+    ALTER TABLE content ADD CONSTRAINT content_body_len CHECK (body IS NULL OR length(body) <= 10000);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'plans_name_len') THEN
+    ALTER TABLE subscription_plans ADD CONSTRAINT plans_name_len CHECK (length(name) <= 100);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'plans_description_len') THEN
+    ALTER TABLE subscription_plans ADD CONSTRAINT plans_description_len CHECK (description IS NULL OR length(description) <= 500);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'courses_title_len') THEN
+    ALTER TABLE courses ADD CONSTRAINT courses_title_len CHECK (length(title) <= 200);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'courses_description_len') THEN
+    ALTER TABLE courses ADD CONSTRAINT courses_description_len CHECK (description IS NULL OR length(description) <= 2000);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'services_title_len') THEN
+    ALTER TABLE services ADD CONSTRAINT services_title_len CHECK (length(title) <= 200);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'services_description_len') THEN
+    ALTER TABLE services ADD CONSTRAINT services_description_len CHECK (description IS NULL OR length(description) <= 2000);
   END IF;
 END;
 $$;
