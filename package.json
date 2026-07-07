@@ -11,7 +11,7 @@
     "test": "vitest run",
     "hardhat:compile": "hardhat compile",
     "hardhat:test": "hardhat test",
-    "hardhat:deploy:mumbai": "hardhat run scripts/deploy.ts --network mumbai"
+    "hardhat:deploy:amoy": "hardhat run scripts/deploy.ts --network amoy"
   },
   "dependencies": {
     "@rainbow-me/rainbowkit": "^2.1.6",
@@ -36,5 +36,8 @@
     "tailwindcss": "^3.4.13",
     "typescript": "^5.6.3",
     "vitest": "^2.1.8"
+  },
+  "overrides": {
+    "ws": "^8.21.0"
   }
 }

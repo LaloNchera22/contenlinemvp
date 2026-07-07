@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
   //    lo reconstruimos restando el TTL para reproducir el mensaje firmado.
   const expiresAt = new Date(nonceRow.expires_at);
   const issuedAt = new Date(expiresAt.getTime() - NONCE_TTL_MS);
-  const message = buildSiweMessage({ nonce, issuedAt, expiresAt });
+  const message = buildSiweMessage({ nonce, issuedAt, expiresAt, address });
 
   const valid = await publicClient.verifyMessage({
     address,

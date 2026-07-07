@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useAccount, useSignMessage } from 'wagmi';
-import { supabaseBrowser } from '@/lib/supabase/client';
+import { getSupabaseBrowser } from '@/lib/supabase/client';
 
 /**
  * Hook que ejecuta el flujo SIWE completo:
@@ -49,7 +49,7 @@ export function useSiweAuth() {
       // 4. Inyectar el JWT en el cliente Supabase (para RLS desde el browser).
       //    refresh_token vacío a propósito: nuestro JWT no es un refresh token de
       //    Supabase. La renovación la hace refresh() contra /api/auth/refresh.
-      await supabaseBrowser.auth.setSession({ access_token: token, refresh_token: '' });
+      await getSupabaseBrowser().auth.setSession({ access_token: token, refresh_token: '' });
 
       return { token, user };
     } catch (e) {
@@ -64,13 +64,13 @@ export function useSiweAuth() {
     const res = await fetch('/api/auth/refresh', { method: 'POST' });
     if (!res.ok) return null;
     const { token, user } = await res.json();
-    await supabaseBrowser.auth.setSession({ access_token: token, refresh_token: '' });
+    await getSupabaseBrowser().auth.setSession({ access_token: token, refresh_token: '' });
     return { token, user };
   }, []);
 
   const signOut = useCallback(async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
-    await supabaseBrowser.auth.signOut();
+    await getSupabaseBrowser().auth.signOut();
   }, []);
 
   return { signIn, signOut, refresh, loading, error };

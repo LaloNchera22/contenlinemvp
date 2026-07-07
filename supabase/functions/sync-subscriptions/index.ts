@@ -5,7 +5,21 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { createPublicClient, http } from 'https://esm.sh/viem@2';
-import { polygon } from 'https://esm.sh/viem@2/chains';
+import { polygon, polygonAmoy } from 'https://esm.sh/viem@2/chains';
+
+// Mismo criterio que lib/chain.ts y sync-plans-onchain: la red la decide
+// CHAIN_ID (137 = mainnet, cualquier otro valor = Amoy). Antes esta función
+// hardcodeaba mainnet: en un despliegue de testnet consultaba el contrato en
+// la red equivocada y desactivaba suscripciones válidas.
+function getChain() {
+  return Deno.env.get('CHAIN_ID') === '137' ? polygon : polygonAmoy;
+}
+
+function getRpcUrl(): string | undefined {
+  return Deno.env.get('CHAIN_ID') === '137'
+    ? Deno.env.get('POLYGON_RPC_URL')
+    : Deno.env.get('POLYGON_AMOY_RPC_URL');
+}
 
 const SUBSCRIPTION_ABI = [
   {
@@ -39,8 +53,8 @@ Deno.serve(async () => {
 
   const admin = createClient(supabaseUrl, serviceKey);
   const client = createPublicClient({
-    chain: polygon,
-    transport: http(Deno.env.get('POLYGON_RPC_URL')),
+    chain: getChain(),
+    transport: http(getRpcUrl()),
   });
 
   // Paginar para no cargar todas las suscripciones en memoria de una Edge

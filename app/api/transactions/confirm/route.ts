@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
     // API key que originó el cobro (para atribuir volumen por key).
     const { data: paymentSession } = await admin
       .from('payment_sessions')
-      .select('id, amount_usdc, creator_id, api_key_id, webhook_url')
+      .select('id, amount_usdc, category, creator_id, api_key_id, webhook_url')
       .eq('id', ev.sessionId)
       .maybeSingle();
     if (!paymentSession) {
@@ -151,7 +151,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    category = CATEGORY_BY_INDEX[Number(ev.category)] ?? 'onchain';
+    // La categoría del evento también debe coincidir con la de la sesión: el
+    // contrato acepta cualquier `category` del caller y cada categoría tiene un
+    // fee distinto (course 10% vs service/onchain 3%). Sin este check, el
+    // pagador podría saldar una sesión de curso declarando category=onchain y
+    // la plataforma cobraría 3% en lugar del 10% pactado.
+    const eventCategory = CATEGORY_BY_INDEX[Number(ev.category)];
+    if (!eventCategory || eventCategory !== paymentSession.category) {
+      return NextResponse.json(
+        { error: 'La categoría onchain no coincide con la sesión de pago' },
+        { status: 400 },
+      );
+    }
+
+    category = eventCategory;
     amountRaw = ev.amount;
     feeRaw = ev.fee;
     fromWallet = ev.from;
@@ -299,7 +312,7 @@ export async function POST(req: NextRequest) {
         })
         .eq('id', existingSub.id);
     } else {
-      await admin.from('subscriptions').insert({
+      const { error: subInsertErr } = await admin.from('subscriptions').insert({
         creator_id: creatorId,
         subscriber_wallet: subContext.subscriber,
         plan_id: subContext.planUuid,
@@ -308,12 +321,28 @@ export async function POST(req: NextRequest) {
         last_tx_hash: txHash,
       });
 
-      // Solo en alta NUEVA (no en renovación/extends): notificar nuevo suscriptor.
-      const short = `${subContext.subscriber.slice(0, 6)}…${subContext.subscriber.slice(-4)}`;
-      await notifyCreator(admin, creatorId, 'new_subscriber', {
-        subject: `Nuevo suscriptor: ${short}`,
-        html: `<p>La wallet <strong>${short}</strong> se suscribió a tu plan <strong>${planName ?? ''}</strong>.</p>`,
-      });
+      // 23505 = unique_violation (uq_subscriptions_creator_subscriber): otra
+      // confirmación concurrente ganó el insert entre nuestro lookup y aquí.
+      // Tratamos este caso como renovación (update) en vez de duplicar la fila.
+      if (subInsertErr?.code === '23505') {
+        await admin
+          .from('subscriptions')
+          .update({
+            plan_id: subContext.planUuid,
+            active: true,
+            expires_at: expiresIso,
+            last_tx_hash: txHash,
+          })
+          .eq('creator_id', creatorId)
+          .ilike('subscriber_wallet', subContext.subscriber);
+      } else if (!subInsertErr) {
+        // Solo en alta NUEVA (no en renovación/extends): notificar nuevo suscriptor.
+        const short = `${subContext.subscriber.slice(0, 6)}…${subContext.subscriber.slice(-4)}`;
+        await notifyCreator(admin, creatorId, 'new_subscriber', {
+          subject: `Nuevo suscriptor: ${short}`,
+          html: `<p>La wallet <strong>${short}</strong> se suscribió a tu plan <strong>${planName ?? ''}</strong>.</p>`,
+        });
+      }
     }
   }
 

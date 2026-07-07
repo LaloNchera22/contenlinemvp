@@ -1,8 +1,8 @@
 import { ethers } from 'hardhat';
 
 /**
- * Despliega los contratos en la red seleccionada (Mumbai primero).
- *   npx hardhat run scripts/deploy.ts --network mumbai
+ * Despliega los contratos en la red seleccionada (Amoy primero).
+ *   npx hardhat run scripts/deploy.ts --network amoy
  */
 async function main() {
   const [deployer] = await ethers.getSigners();

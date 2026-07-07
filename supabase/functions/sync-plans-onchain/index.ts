@@ -27,6 +27,12 @@ function getChain() {
   return Deno.env.get('CHAIN_ID') === '137' ? polygon : polygonAmoy;
 }
 
+function getRpcUrl(): string | undefined {
+  return Deno.env.get('CHAIN_ID') === '137'
+    ? Deno.env.get('POLYGON_RPC_URL')
+    : Deno.env.get('POLYGON_AMOY_RPC_URL');
+}
+
 Deno.serve(async (req: Request) => {
   const admin = createClient(
     Deno.env.get('SUPABASE_URL')!,
@@ -34,7 +40,7 @@ Deno.serve(async (req: Request) => {
   );
   const client = createPublicClient({
     chain: getChain(),
-    transport: http(Deno.env.get('POLYGON_RPC_URL')),
+    transport: http(getRpcUrl()),
   });
   const contract = Deno.env.get('CONTRACT_SUBSCRIPTION') as `0x${string}` | undefined;
   if (!contract) {

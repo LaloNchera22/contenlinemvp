@@ -48,11 +48,19 @@ export async function POST(req: NextRequest) {
   // público guarda una URL https.
   const isExclusive = body.is_exclusive ?? true;
   if (body.media_url) {
-    const okPath = isExclusive && STORAGE_PATH.test(body.media_url);
+    // La ruta de storage debe vivir bajo la carpeta del propio creador
+    // (`<user_id>/...`, el prefijo que asigna /api/upload) y no contener `..`.
+    // Sin este check un creador podría registrar la ruta de un objeto AJENO en
+    // el bucket privado y obtener signed URLs del contenido exclusivo de otro.
+    const okPath =
+      isExclusive &&
+      STORAGE_PATH.test(body.media_url) &&
+      body.media_url.startsWith(`${session.sub}/`) &&
+      !body.media_url.includes('..');
     const okUrl = !isExclusive && isSafeHttpsUrl(body.media_url);
     if (!okPath && !okUrl) {
       return NextResponse.json(
-        { error: isExclusive ? 'media_url debe ser una ruta de storage válida' : 'media_url debe ser https' },
+        { error: isExclusive ? 'media_url debe ser una ruta de tu propio storage' : 'media_url debe ser https' },
         { status: 400 },
       );
     }
