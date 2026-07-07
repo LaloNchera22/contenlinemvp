@@ -1,3 +1,5 @@
+import { cache } from 'react';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getSessionFromRequest } from '@/lib/auth';
@@ -16,7 +18,9 @@ type ContentRow = {
   is_exclusive: boolean;
 };
 
-async function getCreator(username: string) {
+// cache() deduplica la query entre generateMetadata y el render de la página
+// dentro del mismo request.
+const getCreator = cache(async function getCreator(username: string) {
   const admin = createAdminClient();
   const { data: user } = await admin
     .from('users')
@@ -39,6 +43,43 @@ async function getCreator(username: string) {
     .limit(24);
 
   return { user, plans: plans ?? [], content: (content ?? []) as ContentRow[] };
+});
+
+/**
+ * SEO del perfil público: título/descripción por creador, canonical y Open
+ * Graph de tipo profile. Los perfiles adultos se marcan noindex + rating adult.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: { username: string };
+}): Promise<Metadata> {
+  const data = await getCreator(params.username);
+  if (!data) return { title: 'Creador no encontrado', robots: { index: false } };
+  const { user } = data;
+
+  const title = `${user.display_name} (@${user.username})`;
+  const description =
+    user.bio ??
+    `Suscríbete a ${user.display_name} en Contenline y accede a su contenido exclusivo con pagos en USDC.`;
+  const avatar = safeHttpsUrl(user.avatar_url);
+
+  return {
+    title,
+    description,
+    alternates: { canonical: `/${encodeURIComponent(user.username)}` },
+    openGraph: {
+      type: 'profile',
+      title,
+      description,
+      url: `/${encodeURIComponent(user.username)}`,
+      ...(avatar ? { images: [{ url: avatar }] } : {}),
+    },
+    twitter: { card: 'summary', title, description },
+    ...(user.is_adult
+      ? { robots: { index: false, follow: false }, other: { rating: 'adult' } }
+      : {}),
+  };
 }
 
 /**

@@ -95,7 +95,7 @@ export default function SubscribersPage() {
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`btn ${tab === t.key ? 'bg-brand text-white' : 'btn-ghost'}`}
+            className={tab === t.key ? 'btn-primary' : 'btn-ghost'}
           >
             {t.label}
           </button>

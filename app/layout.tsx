@@ -1,17 +1,45 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import './globals.css';
 import { Providers } from './providers';
 import CookieBanner from './CookieBanner';
+import { localeFromPathname } from '@/lib/i18n';
+import { siteUrl } from '@/lib/seo';
 
 export const metadata: Metadata = {
-  title: 'Contenline — Monetización cripto para creadores',
+  metadataBase: siteUrl(),
+  title: {
+    default: 'Contenline — Monetización cripto para creadores',
+    template: '%s · Contenline',
+  },
   description:
     'Panel de creador + infraestructura de pagos cripto en Polygon. Suscripciones, cursos, servicios y API para developers.',
+  applicationName: 'Contenline',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  openGraph: {
+    siteName: 'Contenline',
+    type: 'website',
+  },
+  formatDetection: { telephone: false },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  // El atributo lang debe reflejar el idioma real de la página (/​en, /pt…);
+  // middleware.ts inyecta el pathname en x-pathname para poder derivarlo aquí.
+  const pathname = headers().get('x-pathname') ?? '/';
+  const lang = localeFromPathname(pathname);
+
   return (
-    <html lang="es">
+    <html lang={lang}>
       <body>
         <Providers>
           {children}

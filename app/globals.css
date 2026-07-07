@@ -7,29 +7,33 @@
 }
 
 body {
-  background-color: #0b0b12;
-  color: #e5e5ef;
+  background-color: #121212;
+  color: #ededed;
   -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background-color: rgba(62, 207, 142, 0.35);
 }
 
 @layer components {
   .card {
-    @apply bg-surface-card border border-surface-border rounded-xl p-5;
+    @apply bg-surface-card border border-surface-border rounded-xl p-5 transition-colors hover:border-white/20;
   }
   .btn {
-    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors;
+    @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand;
   }
   .btn-primary {
-    @apply btn bg-brand hover:bg-brand-dark text-white;
+    @apply btn bg-brand-dark text-white border border-brand-dim/60 hover:bg-brand-dim/50 hover:border-brand;
   }
   .btn-ghost {
-    @apply btn border border-surface-border hover:bg-surface-border/40 text-white;
+    @apply btn border border-surface-border bg-surface-card hover:bg-surface-border/40 text-white;
   }
   .label {
     /* /60 mínimo para cumplir el contraste WCAG AA (4.5:1) sobre la card. */
     @apply block text-xs uppercase tracking-wide text-white/60 mb-1;
   }
   .input {
-    @apply w-full rounded-lg bg-surface border border-surface-border px-3 py-2 text-sm outline-none focus:border-brand;
+    @apply w-full rounded-md bg-surface border border-surface-border px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand/40;
   }
 }
