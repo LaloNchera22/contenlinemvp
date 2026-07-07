@@ -88,7 +88,7 @@ function OnboardingCard({
 }) {
   return (
     <Link href={href} className="card hover:border-brand transition-colors block">
-      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">
+      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-brand text-xs font-bold text-surface">
         {step}
       </span>
       <p className="mt-3 font-semibold text-brand-light">{title}</p>

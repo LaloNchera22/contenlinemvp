@@ -46,10 +46,18 @@ export async function middleware(req: NextRequest) {
   // scripts; debe ir tanto en la request como en la response.
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set('x-nonce', nonce);
+  // El layout raíz lee el pathname para fijar el atributo lang del <html>
+  // según la ruta de idioma (/, /en, /pt).
+  requestHeaders.set('x-pathname', req.nextUrl.pathname);
   requestHeaders.set('Content-Security-Policy', csp);
 
   const res = NextResponse.next({ request: { headers: requestHeaders } });
   res.headers.set('Content-Security-Policy', csp);
+
+  // Rutas privadas o transaccionales: fuera del índice de buscadores.
+  if (/^\/(dashboard|checkout|api)(\/|$)/.test(req.nextUrl.pathname)) {
+    res.headers.set('X-Robots-Tag', 'noindex, nofollow');
+  }
   return res;
 }
 

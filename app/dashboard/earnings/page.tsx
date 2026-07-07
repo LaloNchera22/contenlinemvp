@@ -53,7 +53,7 @@ export default function EarningsPage() {
           <button
             key={c}
             onClick={() => setFilter(c)}
-            className={`btn ${filter === c ? 'bg-brand text-white' : 'btn-ghost'}`}
+            className={filter === c ? 'btn-primary' : 'btn-ghost'}
           >
             {c}
           </button>

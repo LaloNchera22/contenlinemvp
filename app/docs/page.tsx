@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: 'Documentación de la API · Contenline',
   description:
     'API pública de pagos USDC: crea checkouts, consulta sesiones y recibe webhooks firmados.',
+  alternates: { canonical: '/docs' },
 };
 
 // Página estática: documentación de la API pública para developers. No depende de

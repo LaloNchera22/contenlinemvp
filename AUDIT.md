@@ -2,6 +2,13 @@
 
 Estado de los hallazgos de la auditoría exhaustiva (commit base `96fdf19`).
 
+> **7ª ronda — auditoría UI/UX + SEO internacional.**
+> Rediseño del sistema visual (paleta y componentes estilo Supabase: acento
+> verde sobre grises neutros, landing de dos columnas con cards de producto) y
+> SEO de startup internacional: landing multilenguaje es/en/pt con hreflang,
+> sitemap/robots/manifest, Open Graph con imagen generada, JSON-LD y metadata
+> por perfil de creador. Ver tabla "7ª ronda" al final.
+
 > **6ª ronda — auditoría pre-lanzamiento (seguridad, arquitectura y operaciones).**
 > Ver tabla "6ª ronda" al final: bypass de comisión en confirm, robo de contenido
 > exclusivo vía media_url, binding EIP-4361 del mensaje SIWE, migración
@@ -168,3 +175,40 @@ seguridad existente, se difiere a una sesión dedicada (opción contemplada en e
 
 - Upgrade a Next 15/16 para cerrar los advisories DoS de Next 14 (breaking: APIs async de `cookies()`/`headers()`; sesión dedicada).
 - i18n (BLOQUE E), verificación de identidad de creadores adultos y demás pendientes de rondas previas siguen vigentes.
+
+---
+
+## 7ª ronda — auditoría UI/UX + SEO internacional
+
+### 🎨 UI/UX (objetivo: sistema visual tipo Supabase)
+
+| Hallazgo | Estado | Detalle |
+|----------|--------|---------|
+| Identidad visual genérica (violeta `#7c3aed` sobre `#0b0b12`) sin sistema coherente | ✅ Resuelto | Paleta estilo Supabase en `tailwind.config.ts`: acento verde (`#3ECF8E` / `#24B47E` / `#006239`) sobre grises neutros (`#121212` fondo, `#1C1C1C` cards, `#2E2E2E` bordes). Los tokens (`brand`, `surface`) se conservan, por lo que todo el dashboard hereda el restyle sin tocar cada página. |
+| Landing centrada de una columna, sin jerarquía ni prueba de producto | ✅ Resuelto | `app/components/landing/Landing.tsx`: header sticky con navegación, hero de dos columnas (titular con segunda línea en verde + párrafo a la derecha, como Supabase), CTAs primario/secundario, 3 cards de producto con icono y checklist ✓, banda de infraestructura (USDC·Polygon / SIWE / Supabase / Webhooks) y footer con switcher de idioma. |
+| `bg-brand text-white` perdía contraste WCAG con el nuevo verde claro (tabs, nav activa, pasos) | ✅ Resuelto | Botón primario ahora usa verde oscuro `#006239` con borde `brand-dim` (blanco AA); nav activa del dashboard usa `bg-brand-dark/30 text-brand`; el círculo de pasos usa texto oscuro sobre verde. |
+| Botones/inputs sin estados de foco visibles (accesibilidad teclado) | ✅ Resuelto | `.btn` añade `focus-visible:outline-brand`; `.input` añade `focus:ring-brand/40`. |
+| Modal de RainbowKit seguía en violeta, desalineado de la marca | ✅ Resuelto | `accentColor: '#006239'` en `providers.tsx`. |
+
+### 🔍 SEO internacional
+
+| Hallazgo | Estado | Detalle |
+|----------|--------|---------|
+| Sitio solo en español, sin señal alguna de idioma para buscadores (cerraba la deuda "i18n BLOQUE E" para las páginas públicas) | ✅ Resuelto | Landing multilenguaje es/en/pt (`lib/i18n.ts` con diccionarios tipados; rutas `/`, `/en`, `/pt`) con `alternates.languages` (hreflang recíproco + `x-default`) en metadata y sitemap. El `lang` del `<html>` se fija por ruta (middleware inyecta `x-pathname`). |
+| Sin `metadataBase`, canonical, Open Graph ni Twitter Card: los enlaces compartidos se renderizaban sin preview | ✅ Resuelto | `lib/seo.ts` centraliza `siteUrl()` (de `NEXT_PUBLIC_APP_URL`) y `landingMetadata(locale)`; layout raíz define `metadataBase`, `title.template` y robots de Google. `app/opengraph-image.tsx` genera la imagen OG 1200×630 en runtime (sin binarios en el repo). |
+| Sin `sitemap.xml` ni `robots.txt` | ✅ Resuelto | `app/sitemap.ts` (landing por idioma con alternates xhtml, páginas públicas y perfiles de creadores desde Supabase con fallo tolerante; excluye perfiles adultos) y `app/robots.ts` (disallow `/dashboard`, `/checkout/`, `/api/` + referencia al sitemap). |
+| Rutas privadas/transaccionales indexables | ✅ Resuelto | Middleware añade `X-Robots-Tag: noindex, nofollow` a `/dashboard`, `/checkout` y `/api`. |
+| Perfiles públicos `/[username]` sin metadata: todos compartían el título global | ✅ Resuelto | `generateMetadata` por creador (título, bio, canonical, OG `profile` con avatar; `cache()` deduplica la query con el render). Perfiles adultos: `noindex` + `rating: adult`. |
+| Sin datos estructurados | ✅ Resuelto | JSON-LD (`Organization` + `WebSite` + `SoftwareApplication`) en la landing, con el nonce CSP del middleware. |
+
+### Verificación
+
+`typecheck`, `build` y arranque en producción OK; verificado con render real:
+hreflang/canonical/OG en `/` y `/en`, `robots.txt`, `sitemap.xml`,
+`X-Robots-Tag` en rutas privadas y screenshot de la landing en es/en.
+
+### Deuda documentada (7ª ronda)
+
+- El dashboard sigue solo en español (privado, sin impacto SEO); extender los diccionarios si se quiere UI multilenguaje completa.
+- Añadir favicon/íconos PWA reales (el manifest declara `icons: []`).
+- Al usar dominio definitivo, dar de alta la propiedad en Google Search Console y enviar el sitemap.
