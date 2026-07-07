@@ -20,7 +20,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const supabase = createServerClient(session.token);
   const { data: content, error } = await supabase
     .from('content')
-    .select('id, media_url, is_exclusive')
+    .select('id, creator_id, media_url, is_exclusive')
     .eq('id', params.id)
     .maybeSingle();
 
@@ -40,6 +40,14 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   // 2. media_url para exclusivo guarda la ruta dentro del bucket privado.
   const objectPath = content.media_url.replace(/^.*exclusive-content\//, '');
+
+  // Defensa en profundidad (cubre también filas creadas antes de validar el
+  // prefijo en POST /api/content): solo firmamos objetos que vivan bajo la
+  // carpeta del creador dueño de este contenido. Evita que una media_url
+  // manipulada apunte al objeto exclusivo de OTRO creador.
+  if (!objectPath.startsWith(`${content.creator_id}/`) || objectPath.includes('..')) {
+    return NextResponse.json({ error: 'Ruta de media inválida' }, { status: 400 });
+  }
 
   // 3. Generar signed URL con service_role (acceso al bucket privado).
   const admin = createAdminClient();

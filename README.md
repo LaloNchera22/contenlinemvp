@@ -52,7 +52,7 @@ test/                    # tests de contratos
 ```bash
 npm run hardhat:compile
 npm run hardhat:test
-npm run hardhat:deploy:mumbai   # testnet primero
+npm run hardhat:deploy:amoy     # testnet primero (Amoy; Mumbai fue apagada en 2024)
 ```
 
 Copia las direcciones desplegadas a `NEXT_PUBLIC_CONTRACT_SUBSCRIPTION` y `NEXT_PUBLIC_CONTRACT_PAYMENT`.
@@ -64,7 +64,6 @@ la confirmación de transacciones en `/api/transactions/confirm`). Las Edge
 Functions quedan reservadas para crons y webhooks invocados desde Supabase:
 
 ```bash
-supabase functions deploy validate-api-key
 supabase functions deploy sync-subscriptions   # cron: 0 * * * *
 supabase functions deploy sync-plans-onchain    # cron: */5 * * * *  (fallback del webhook PlanSet)
 supabase functions deploy process-webhook       # entrega webhooks firmados (HMAC)

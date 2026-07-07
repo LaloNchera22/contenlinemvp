@@ -2,6 +2,12 @@
 
 Estado de los hallazgos de la auditoría exhaustiva (commit base `96fdf19`).
 
+> **6ª ronda — auditoría pre-lanzamiento (seguridad, arquitectura y operaciones).**
+> Ver tabla "6ª ronda" al final: bypass de comisión en confirm, robo de contenido
+> exclusivo vía media_url, binding EIP-4361 del mensaje SIWE, migración
+> Mumbai→Amoy, build reproducible sin env vars, índice único de suscripciones,
+> eliminación de Edge Functions duplicadas, CI y reducción de vulnerabilidades npm.
+
 > **5ª ronda (87 → ~95/100).** Cierre de la promesa de la API pública (webhooks
 > reales con persistencia y retry), vista de suscriptores para el creador,
 > hardening de secrets/whitelist/env vars, y notificaciones por email opt-in.
@@ -126,3 +132,39 @@ seguridad existente, se difiere a una sesión dedicada (opción contemplada en e
 | Normativa | 84 | 92 | Email opt-in con verificación + borrado en erasure; trazabilidad de entregas. |
 | Internacionalización | 60 | 60 | Sin cambios (diferido, BLOQUE E). |
 | **Global** | **87** | **~95** | |
+
+---
+
+## 6ª ronda — auditoría pre-lanzamiento (clientes)
+
+### 🔒 Seguridad
+
+| Hallazgo | Severidad | Estado | Detalle |
+|----------|-----------|--------|---------|
+| Bypass de comisión en `confirm`: el pagador elige `category` en `pay()` y cada categoría tiene fee distinto (course 10% vs onchain/service 3%); una sesión de curso podía saldarse declarando `onchain` y la plataforma cobraba 3% | Alta | ✅ Resuelto | `confirm` valida que la categoría del evento coincida con `payment_sessions.category` (400 si difiere). |
+| Robo de contenido exclusivo: un creador podía registrar en `media_url` la ruta de storage de OTRO creador y obtener signed URLs de su contenido | Alta | ✅ Resuelto | `POST /api/content` exige prefijo `<user_id>/` (el que asigna `/api/upload`) y sin `..`; `/api/content/[id]/url` re-verifica el prefijo contra `content.creator_id` (cubre filas antiguas). |
+| Mensaje SIWE sin binding de dominio/address/chain: una web maliciosa podía pedir un nonce para la wallet de la víctima, hacerle firmar el texto genérico en otro contexto y usar la firma para iniciar sesión aquí | Media-alta | ✅ Resuelto | `buildSiweMessage` incluye dominio (de `NEXT_PUBLIC_APP_URL`), address y chain id (espíritu EIP-4361); el backend los fija server-side al reconstruir el mensaje. |
+| Edge Function `verify-siwe` duplicada reintroducía el username predecible (vulnerabilidad de squatting ya corregida en la API route) y hardcodeaba mainnet; `validate-api-key` duplicaba `lib/validateApiKey` | Media | ✅ Resuelto | Ambas eliminadas. Consolidación conforme a la decisión de la 4ª ronda: las API Routes son la fuente de verdad; las Edge Functions quedan solo para crons/webhooks. |
+| Duplicados en `subscriptions` bajo confirmaciones concurrentes (lookup-then-insert) inflaban métricas y lista de suscriptores | Media | ✅ Resuelto | Índice único `(creator_id, lower(subscriber_wallet))` con dedupe previo idempotente en `schema.sql`; `confirm` maneja el conflicto 23505 como renovación. |
+| 27 vulnerabilidades npm en producción (5 high, cadena WalletConnect/@reown + ws + lodash + next) | Media | 🟡 Parcial (27→12) | `npm audit fix` + update de rainbowkit/wagmi/viem dentro de semver + override `ws@^8.21.0`. Restan 2 high sin fix no-breaking: Next 14 (DoS; el fix requiere migrar a Next 15/16) y lodash transitivo. Documentado como deuda: planificar upgrade de Next en sesión dedicada. |
+
+### 🏗 Arquitectura
+
+| Hallazgo | Estado | Detalle |
+|----------|--------|---------|
+| Testnet Mumbai (80001) apagada por Polygon en abril de 2024 seguía referenciada en `lib/chain.ts`, `lib/wagmi.ts`, `hardhat.config.ts`, `.env.example` y README: todo el flujo de testnet estaba roto | ✅ Resuelto | Migración completa a Amoy (80002): `POLYGON_AMOY_RPC_URL`, red `amoy` en hardhat, script `hardhat:deploy:amoy`. |
+| `sync-subscriptions` hardcodeaba Polygon mainnet: en un despliegue de testnet consultaba el contrato en la red equivocada y desactivaba suscripciones válidas | ✅ Resuelto | Red y RPC por `CHAIN_ID`, mismo criterio que `sync-plans-onchain` y `lib/chain.ts`. |
+| `sync-plans-onchain` usaba `POLYGON_RPC_URL` para ambas redes | ✅ Resuelto | RPC seleccionado por `CHAIN_ID` (`getRpcUrl`). |
+| wagmi exponía Polygon y Mumbai a la vez: el usuario podía transaccionar en una red distinta a la que valida el backend | ✅ Resuelto | Una sola cadena decidida por `NEXT_PUBLIC_CHAIN_ID`. |
+
+### ⚙️ Operaciones
+
+| Hallazgo | Estado | Detalle |
+|----------|--------|---------|
+| `next build` fallaba sin env vars ("supabaseUrl is required" al prerender `/` y `/dashboard/settings`): builds no reproducibles y CI imposible | ✅ Resuelto | `lib/supabase/client.ts` instancia el cliente browser de forma lazy (`getSupabaseBrowser()`); el prerender ya no ejecuta `createClient`. |
+| Sin CI: nada garantizaba que main compilara ni que los tests pasaran antes de mergear | ✅ Resuelto | `.github/workflows/ci.yml` (typecheck + tests + build en cada push/PR). |
+
+### Deuda documentada (6ª ronda)
+
+- Upgrade a Next 15/16 para cerrar los advisories DoS de Next 14 (breaking: APIs async de `cookies()`/`headers()`; sesión dedicada).
+- i18n (BLOQUE E), verificación de identidad de creadores adultos y demás pendientes de rondas previas siguen vigentes.

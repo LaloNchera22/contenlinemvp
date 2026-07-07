@@ -4,6 +4,7 @@ import { isSafeWebhookUrl, fireWebhook } from '../lib/webhook';
 import { isSafeHttpsUrl } from '../lib/url';
 import { monthlyValue, summarizeSubscribers } from '../lib/subscribers';
 import { sendEmail, notifyCreator } from '../lib/email';
+import { buildSiweMessage } from '../lib/siwe';
 
 describe('calculateFee', () => {
   it('aplica 10% a suscripción y curso', () => {
@@ -207,5 +208,34 @@ describe('verifySupabaseJwt', () => {
     expect(verifySupabaseJwt('a.b.c')).toBeNull();
     expect(verifySupabaseJwt(token + 'tampered')).toBeNull();
     expect(verifySupabaseJwt('only.two')).toBeNull();
+  });
+});
+
+describe('buildSiweMessage', () => {
+  it('incluye dominio, address y chain id (binding EIP-4361)', () => {
+    process.env.NEXT_PUBLIC_APP_URL = 'https://contenline.app';
+    process.env.NEXT_PUBLIC_CHAIN_ID = '137';
+    const msg = buildSiweMessage({
+      nonce: 'abc123',
+      issuedAt: new Date('2026-01-01T00:00:00Z'),
+      expiresAt: new Date('2026-01-01T00:05:00Z'),
+      address: '0x1234567890AbcdEF1234567890aBcdef12345678',
+    });
+    expect(msg).toContain('contenline.app quiere que inicies sesión');
+    expect(msg).toContain('0x1234567890AbcdEF1234567890aBcdef12345678');
+    expect(msg).toContain('Nonce: abc123');
+    expect(msg).toContain('Chain ID: 137');
+    expect(msg).toContain('Expira en: 2026-01-01T00:05:00.000Z');
+  });
+
+  it('el mensaje cambia con la address (una firma no sirve para otra wallet)', () => {
+    const base = {
+      nonce: 'n',
+      issuedAt: new Date('2026-01-01T00:00:00Z'),
+      expiresAt: new Date('2026-01-01T00:05:00Z'),
+    };
+    const a = buildSiweMessage({ ...base, address: '0x' + 'a'.repeat(40) });
+    const b = buildSiweMessage({ ...base, address: '0x' + 'b'.repeat(40) });
+    expect(a).not.toBe(b);
   });
 });

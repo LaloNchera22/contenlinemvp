@@ -77,6 +77,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Demasiados nonces activos; intenta más tarde' }, { status: 429 });
   }
 
-  const message = buildSiweMessage({ nonce, issuedAt, expiresAt });
+  const message = buildSiweMessage({ nonce, issuedAt, expiresAt, address: wallet });
   return NextResponse.json({ nonce, message, expiresAt: expiresAt.toISOString() });
 }

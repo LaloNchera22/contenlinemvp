@@ -253,6 +253,29 @@ CREATE INDEX IF NOT EXISTS idx_subscriptions_lookup
 CREATE INDEX IF NOT EXISTS idx_subscriptions_creator_active
   ON subscriptions (creator_id, active, expires_at DESC);
 
+-- Una sola fila por (creador, wallet suscriptora): /api/transactions/confirm
+-- hace lookup-then-insert y, bajo dos confirmaciones concurrentes, podría crear
+-- filas duplicadas que inflarían las métricas y la lista de suscriptores. El
+-- índice único (case-insensitive: las wallets llegan con distintas mayúsculas
+-- según el origen) convierte la carrera en un conflicto que la API maneja como
+-- update. Antes de crearlo se deduplica conservando la fila con mayor expires_at.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes WHERE indexname = 'uq_subscriptions_creator_subscriber'
+  ) THEN
+    DELETE FROM subscriptions s
+    USING subscriptions dup
+    WHERE s.creator_id = dup.creator_id
+      AND lower(s.subscriber_wallet) = lower(dup.subscriber_wallet)
+      AND s.id <> dup.id
+      AND (s.expires_at, s.id) < (dup.expires_at, dup.id);
+    CREATE UNIQUE INDEX uq_subscriptions_creator_subscriber
+      ON subscriptions (creator_id, lower(subscriber_wallet));
+  END IF;
+END;
+$$;
+
 -- ----------------------------- RLS -----------------------------
 
 ALTER TABLE users               ENABLE ROW LEVEL SECURITY;
