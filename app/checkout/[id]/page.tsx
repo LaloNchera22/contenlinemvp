@@ -51,7 +51,7 @@ export default async function CheckoutPage({ params }: { params: { id: string } 
         </p>
 
         {session.status === 'completed' ? (
-          <p className="mt-6 text-sm text-status-ok">Este pago ya fue completado. ✓</p>
+          <p className="mt-6 text-sm text-status-ok">Este pago ya fue completado.</p>
         ) : expired ? (
           <p className="mt-6 text-sm text-status-warn">Esta sesión de pago expiró.</p>
         ) : (

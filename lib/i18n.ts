@@ -59,6 +59,11 @@ export type LandingDict = {
     secondaryCta: string;
   };
   features: Feature[];
+  showcase: {
+    heading: string;
+    note: string;
+    items: { title: string; creator: string; amount: number; status: string }[];
+  };
   stack: { title: string; items: { name: string; detail: string }[] };
   footer: {
     tagline: string;
@@ -113,6 +118,15 @@ export const dictionaries: Record<Locale, LandingDict> = {
         bullets: ['Sign-In with Ethereum', 'RLS en Supabase', 'Non-custodial por diseño'],
       },
     ],
+    showcase: {
+      heading: 'Retos, próximamente',
+      note: 'Un fan propone un reto y paga en USDC; el pago queda en escrow hasta que entregas y aprueba. Así se verá.',
+      items: [
+        { title: 'Graba un saludo para mi hermana', creator: '@lucia.mp4', amount: 40, status: 'abierto' },
+        { title: 'Reacciona a mi primer corto', creator: '@dj.nero', amount: 75, status: 'en curso' },
+        { title: 'Toca esta canción en directo', creator: '@sara.live', amount: 120, status: 'entregado' },
+      ],
+    },
     stack: {
       title: 'Construido sobre infraestructura probada',
       items: [
@@ -173,6 +187,15 @@ export const dictionaries: Record<Locale, LandingDict> = {
         bullets: ['Sign-In with Ethereum', 'Supabase RLS', 'Non-custodial by design'],
       },
     ],
+    showcase: {
+      heading: 'Challenges, coming soon',
+      note: 'A fan proposes a challenge and pays in USDC; funds sit in escrow until you deliver and they approve. Here is the look.',
+      items: [
+        { title: 'Record a shout-out for my sister', creator: '@lucia.mp4', amount: 40, status: 'open' },
+        { title: 'React to my first short film', creator: '@dj.nero', amount: 75, status: 'in progress' },
+        { title: 'Play this song live on stream', creator: '@sara.live', amount: 120, status: 'delivered' },
+      ],
+    },
     stack: {
       title: 'Built on proven infrastructure',
       items: [
@@ -233,6 +256,15 @@ export const dictionaries: Record<Locale, LandingDict> = {
         bullets: ['Sign-In with Ethereum', 'RLS no Supabase', 'Non-custodial por design'],
       },
     ],
+    showcase: {
+      heading: 'Desafios, em breve',
+      note: 'Um fã propõe um desafio e paga em USDC; o valor fica em escrow até você entregar e ele aprovar. Vai ser assim.',
+      items: [
+        { title: 'Grave um oi para minha irmã', creator: '@lucia.mp4', amount: 40, status: 'aberto' },
+        { title: 'Reaja ao meu primeiro curta', creator: '@dj.nero', amount: 75, status: 'em andamento' },
+        { title: 'Toque esta música ao vivo', creator: '@sara.live', amount: 120, status: 'entregue' },
+      ],
+    },
     stack: {
       title: 'Construído sobre infraestrutura comprovada',
       items: [

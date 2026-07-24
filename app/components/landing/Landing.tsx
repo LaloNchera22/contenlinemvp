@@ -2,13 +2,17 @@ import Link from 'next/link';
 import { headers } from 'next/headers';
 import { dictionaries, locales, localePath, type Locale } from '@/lib/i18n';
 import { siteUrl } from '@/lib/seo';
+import { ACCENTS } from '@/lib/accents';
 import HeroAuth from './HeroAuth';
 import HeaderWallet from './HeaderWallet';
+import ThemeToggle from '../ThemeToggle';
+import ChallengeCard from '../ChallengeCard';
+import BrandMark from '../BrandMark';
 
 /**
- * Landing pública multilenguaje (server component). El look sigue el sistema
- * visual de Supabase: fondo neutro oscuro, acento verde, hero de dos columnas
- * y cards de producto con checklist.
+ * Landing pública multilenguaje (server component). Pila de mosaicos al estilo
+ * Apple: el chrome es acromático — blancos, negros y grises — y el color lo
+ * ponen los objetos, cada mosaico y cada reto con su propio acento.
  */
 export default function Landing({ locale }: { locale: Locale }) {
   const dict = dictionaries[locale];
@@ -55,12 +59,15 @@ export default function Landing({ locale }: { locale: Locale }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <header className="sticky top-0 z-20 border-b border-sep bg-surface backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+      <header className="glass glass-header sticky top-0 z-20 border-b border-sep">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
           <div className="flex items-center gap-8">
-            <Link href={localePath(locale)} className="flex items-center gap-2 text-lg font-bold">
-              <LogoMark />
-              Conten<span className="text-ink">line</span>
+            <Link
+              href={localePath(locale)}
+              className="flex items-center gap-2 text-lg font-semibold text-ink"
+            >
+              <BrandMark className="h-6 w-6" />
+              Contenline
             </Link>
             <nav className="hidden items-center gap-5 text-sm text-muted sm:flex">
               <Link href="/docs" className="hover:text-ink">
@@ -71,8 +78,9 @@ export default function Landing({ locale }: { locale: Locale }) {
               </Link>
             </nav>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <LanguageSwitcher current={locale} />
+            <ThemeToggle />
             <HeaderWallet />
           </div>
         </div>
@@ -80,10 +88,10 @@ export default function Landing({ locale }: { locale: Locale }) {
 
       <section className="mx-auto grid max-w-6xl gap-10 px-6 pb-16 pt-20 md:grid-cols-2 md:gap-16 md:pt-28">
         <div>
-          <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
+          <h1 className="t-display text-ink">
             {dict.hero.line1}
             <br />
-            <span className="text-ink">{dict.hero.line2}</span>
+            {dict.hero.line2}
           </h1>
           <div className="mt-10 flex flex-wrap items-center gap-4">
             <HeroAuth
@@ -103,27 +111,49 @@ export default function Landing({ locale }: { locale: Locale }) {
         </div>
       </section>
 
+      {/* Un mosaico por mensaje: el acento sale del contenido, no del chrome. */}
       <section className="mx-auto grid max-w-6xl gap-5 px-6 pb-20 md:grid-cols-3">
         {dict.features.map((f, i) => (
-          <article key={f.title} className="card p-6">
-            <div className="flex items-center gap-3">
-              <span className="text-muted">{FEATURE_ICONS[i]}</span>
-              <h2 className="font-semibold">{f.title}</h2>
+          <article
+            key={f.title}
+            className="flex flex-col overflow-hidden rounded-card border border-sep bg-surface"
+          >
+            <div
+              className="flex aspect-[16/10] items-end p-5 text-white"
+              style={{ backgroundColor: ACCENTS[i % ACCENTS.length] }}
+            >
+              <span aria-hidden>{FEATURE_ICONS[i]}</span>
             </div>
-            <p className="mt-3 text-sm leading-relaxed text-muted">{f.body}</p>
-            <ul className="mt-5 space-y-2">
-              {f.bullets.map((b) => (
-                <li key={b} className="flex items-center gap-2 text-sm text-muted">
-                  <CheckIcon />
-                  {b}
-                </li>
-              ))}
-            </ul>
+            <div className="p-5">
+              <h2 className="text-[17px] font-semibold text-ink">{f.title}</h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted">{f.body}</p>
+            </div>
           </article>
         ))}
       </section>
 
+      {/* Vitrina de retos: el mosaico central del marketplace. */}
       <section className="border-t border-sep bg-surface">
+        <div className="mx-auto max-w-6xl px-6 py-16">
+          <h2 className="t-title text-ink">{dict.showcase.heading}</h2>
+          <p className="mt-3 max-w-2xl text-muted">{dict.showcase.note}</p>
+          <div className="mt-10 grid gap-6 [grid-template-columns:repeat(auto-fill,minmax(260px,1fr))]">
+            {dict.showcase.items.map((c, i) => (
+              <ChallengeCard
+                key={c.title}
+                id={`showcase-${i}`}
+                title={c.title}
+                amountUsdc={c.amount}
+                creator={c.creator}
+                statusLabel={c.status}
+                accent={ACCENTS[(i * 3 + 4) % ACCENTS.length]}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-sep">
         <div className="mx-auto max-w-6xl px-6 py-14">
           <h2 className="text-center text-sm font-medium uppercase tracking-widest text-muted">
             {dict.stack.title}
@@ -131,7 +161,7 @@ export default function Landing({ locale }: { locale: Locale }) {
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {dict.stack.items.map((item) => (
               <div key={item.name} className="rounded-control border border-sep bg-surface p-4">
-                <p className="font-mono text-sm text-ink">{item.name}</p>
+                <p className="money text-sm text-ink">{item.name}</p>
                 <p className="mt-1 text-xs text-muted">{item.detail}</p>
               </div>
             ))}
@@ -186,35 +216,16 @@ function LanguageSwitcher({ current }: { current: Locale }) {
   );
 }
 
-function LogoMark() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path d="M13 2 3 14h7l-1 8 12-14h-8l0-6z" fill="#3ECF8E" />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden className="shrink-0">
-      <path d="M5 12.5 10 17.5 19 7" stroke="#3ECF8E" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 const FEATURE_ICONS = [
-  // Panel de creador
-  <svg key="0" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
+  <svg key="0" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
     <rect x="3" y="4" width="18" height="16" rx="2" />
     <path d="M3 9h18M8 4v5" />
   </svg>,
-  // Infra de pagos
-  <svg key="1" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
+  <svg key="1" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
     <rect x="2" y="6" width="20" height="12" rx="2" />
     <path d="M2 10h20M6 14h4" />
   </svg>,
-  // Seguridad Web3
-  <svg key="2" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
+  <svg key="2" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
     <path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6l-7-3z" />
     <path d="m9 12 2 2 4-4" />
   </svg>,

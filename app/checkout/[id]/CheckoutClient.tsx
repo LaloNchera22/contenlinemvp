@@ -28,7 +28,7 @@ export default function CheckoutClient({
 
   async function pay() {
     if (!publicClient) {
-      setStatus('No hay conexión con la red.');
+      setStatus('Sin conexión con la red. Vuelve a intentarlo en un momento.');
       return;
     }
     if (!CONTRACTS.payment) {
@@ -73,11 +73,14 @@ export default function CheckoutClient({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setStatus(data.error ?? 'El pago se hizo onchain pero falló la confirmación.');
+        setStatus(
+          data.error ??
+            'El pago se envió onchain, pero no pudimos confirmarlo. Espera unos segundos y recarga.',
+        );
         return;
       }
       setDone(true);
-      setStatus('¡Pago completado! 🎉');
+      setStatus('Pago completado. Ya puedes cerrar esta ventana.');
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Error en la transacción';
       setStatus(/user rejected|denied/i.test(msg) ? 'Cancelaste la transacción.' : msg);
@@ -92,7 +95,15 @@ export default function CheckoutClient({
         <ConnectButton label="Conecta tu wallet para pagar" />
       ) : (
         <button onClick={pay} disabled={busy || done} className="btn-primary w-full">
-          {done ? 'Pagado ✓' : busy ? 'Procesando…' : `Pagar $${amountUsdc.toFixed(2)} USDC`}
+          {done ? (
+            'Pagado'
+          ) : busy ? (
+            'Procesando…'
+          ) : (
+            <>
+              Pagar <span className="money">${amountUsdc.toFixed(2)}</span> USDC
+            </>
+          )}
         </button>
       )}
       {status && (
