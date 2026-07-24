@@ -35,11 +35,24 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   // El atributo lang debe reflejar el idioma real de la página (/​en, /pt…);
   // middleware.ts inyecta el pathname en x-pathname para poder derivarlo aquí.
-  const pathname = headers().get('x-pathname') ?? '/';
+  const h = headers();
+  const pathname = h.get('x-pathname') ?? '/';
   const lang = localeFromPathname(pathname);
+  // Nonce por request de middleware.ts: sin él la CSP bloquearía el script
+  // inline que aplica el tema guardado antes del primer paint (anti-flash).
+  const nonce = h.get('x-nonce') ?? undefined;
 
   return (
     <html lang={lang}>
+      <head>
+        <script
+          nonce={nonce}
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}",
+          }}
+        />
+      </head>
       <body>
         <Providers>
           {children}

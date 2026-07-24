@@ -55,18 +55,18 @@ export default function Landing({ locale }: { locale: Locale }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <header className="sticky top-0 z-20 border-b border-surface-border bg-surface/90 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b border-sep bg-surface backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
           <div className="flex items-center gap-8">
             <Link href={localePath(locale)} className="flex items-center gap-2 text-lg font-bold">
               <LogoMark />
-              Conten<span className="text-brand">line</span>
+              Conten<span className="text-ink">line</span>
             </Link>
-            <nav className="hidden items-center gap-5 text-sm text-white/60 sm:flex">
-              <Link href="/docs" className="hover:text-white">
+            <nav className="hidden items-center gap-5 text-sm text-muted sm:flex">
+              <Link href="/docs" className="hover:text-ink">
                 {dict.nav.docs}
               </Link>
-              <Link href="/dashboard" className="hover:text-white">
+              <Link href="/dashboard" className="hover:text-ink">
                 {dict.nav.dashboard}
               </Link>
             </nav>
@@ -83,7 +83,7 @@ export default function Landing({ locale }: { locale: Locale }) {
           <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
             {dict.hero.line1}
             <br />
-            <span className="text-brand">{dict.hero.line2}</span>
+            <span className="text-ink">{dict.hero.line2}</span>
           </h1>
           <div className="mt-10 flex flex-wrap items-center gap-4">
             <HeroAuth
@@ -99,7 +99,7 @@ export default function Landing({ locale }: { locale: Locale }) {
           </div>
         </div>
         <div className="flex items-start md:pt-3">
-          <p className="max-w-xl text-lg leading-relaxed text-white/60">{dict.hero.body}</p>
+          <p className="max-w-xl text-lg leading-relaxed text-muted">{dict.hero.body}</p>
         </div>
       </section>
 
@@ -107,13 +107,13 @@ export default function Landing({ locale }: { locale: Locale }) {
         {dict.features.map((f, i) => (
           <article key={f.title} className="card p-6">
             <div className="flex items-center gap-3">
-              <span className="text-white/70">{FEATURE_ICONS[i]}</span>
+              <span className="text-muted">{FEATURE_ICONS[i]}</span>
               <h2 className="font-semibold">{f.title}</h2>
             </div>
-            <p className="mt-3 text-sm leading-relaxed text-white/60">{f.body}</p>
+            <p className="mt-3 text-sm leading-relaxed text-muted">{f.body}</p>
             <ul className="mt-5 space-y-2">
               {f.bullets.map((b) => (
-                <li key={b} className="flex items-center gap-2 text-sm text-white/70">
+                <li key={b} className="flex items-center gap-2 text-sm text-muted">
                   <CheckIcon />
                   {b}
                 </li>
@@ -123,43 +123,43 @@ export default function Landing({ locale }: { locale: Locale }) {
         ))}
       </section>
 
-      <section className="border-t border-surface-border bg-surface-card/40">
+      <section className="border-t border-sep bg-surface">
         <div className="mx-auto max-w-6xl px-6 py-14">
-          <h2 className="text-center text-sm font-medium uppercase tracking-widest text-white/40">
+          <h2 className="text-center text-sm font-medium uppercase tracking-widest text-muted">
             {dict.stack.title}
           </h2>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {dict.stack.items.map((item) => (
-              <div key={item.name} className="rounded-lg border border-surface-border bg-surface p-4">
-                <p className="font-mono text-sm text-brand">{item.name}</p>
-                <p className="mt-1 text-xs text-white/60">{item.detail}</p>
+              <div key={item.name} className="rounded-control border border-sep bg-surface p-4">
+                <p className="font-mono text-sm text-ink">{item.name}</p>
+                <p className="mt-1 text-xs text-muted">{item.detail}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <footer className="border-t border-surface-border px-6 py-8 text-center text-sm text-white/60">
+      <footer className="border-t border-sep px-6 py-8 text-center text-sm text-muted">
         <p>{dict.footer.tagline}</p>
         <nav className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
-          <Link href="/dashboard" className="hover:text-white">
+          <Link href="/dashboard" className="hover:text-ink">
             {dict.footer.dashboard}
           </Link>
-          <Link href="/docs" className="hover:text-white">
+          <Link href="/docs" className="hover:text-ink">
             {dict.footer.docs}
           </Link>
-          <Link href="/privacy" className="hover:text-white">
+          <Link href="/privacy" className="hover:text-ink">
             {dict.footer.privacy}
           </Link>
-          <Link href="/terms" className="hover:text-white">
+          <Link href="/terms" className="hover:text-ink">
             {dict.footer.terms}
           </Link>
-          <Link href="/cookies" className="hover:text-white">
+          <Link href="/cookies" className="hover:text-ink">
             {dict.footer.cookies}
           </Link>
         </nav>
         <div className="mt-4 flex items-center justify-center gap-2 text-xs">
-          <span className="text-white/40">{dict.footer.language}:</span>
+          <span className="text-muted">{dict.footer.language}:</span>
           <LanguageSwitcher current={locale} />
         </div>
       </footer>
@@ -175,8 +175,8 @@ function LanguageSwitcher({ current }: { current: Locale }) {
           key={l}
           href={localePath(l)}
           hrefLang={l}
-          className={`rounded px-1.5 py-0.5 uppercase transition-colors ${
-            l === current ? 'bg-surface-border text-white' : 'text-white/50 hover:text-white'
+          className={`rounded-control px-1.5 py-0.5 uppercase transition-colors ${
+            l === current ? 'bg-sep text-ink' : 'text-muted hover:text-ink'
           }`}
         >
           {l}

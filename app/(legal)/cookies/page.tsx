@@ -6,7 +6,7 @@ export default function CookiesPage() {
   return (
     <LegalShell title="Política de cookies" updated="16 de junio de 2026">
       <section>
-        <h2 className="text-lg font-semibold text-white">1. Qué usamos</h2>
+        <h2 className="text-lg font-semibold text-ink">1. Qué usamos</h2>
         <p>
           Contenline utiliza únicamente almacenamiento <strong>estrictamente necesario</strong>{' '}
           para funcionar:
@@ -22,14 +22,14 @@ export default function CookiesPage() {
         </ul>
       </section>
       <section>
-        <h2 className="text-lg font-semibold text-white">2. Cookies de terceros</h2>
+        <h2 className="text-lg font-semibold text-ink">2. Cookies de terceros</h2>
         <p>
           No usamos cookies de publicidad ni de analítica de terceros. Si en el futuro se
           incorpora analítica, se solicitará tu consentimiento previo mediante el banner.
         </p>
       </section>
       <section>
-        <h2 className="text-lg font-semibold text-white">3. Gestión</h2>
+        <h2 className="text-lg font-semibold text-ink">3. Gestión</h2>
         <p>
           Puedes borrar el almacenamiento desde la configuración de tu navegador. Eliminar la
           cookie de sesión cerrará tu sesión.

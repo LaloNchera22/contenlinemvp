@@ -72,7 +72,7 @@ export default function SubscribersPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Suscriptores</h1>
-          <p className="text-white/60 text-sm mt-1">
+          <p className="text-muted text-sm mt-1">
             Quién te apoya, qué plan tiene y cuándo expira. Ideal para retención.
           </p>
         </div>
@@ -132,13 +132,13 @@ export default function SubscribersPage() {
                 <StatusBadge active={s.active} />
               </div>
               <p className="mt-2 text-sm">{s.plan_name ?? '—'}</p>
-              <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-white/60">
+              <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-muted">
                 <div>
-                  <p className="text-white/40">Suscrito</p>
+                  <p className="text-muted">Suscrito</p>
                   <p>{new Date(s.started_at).toLocaleDateString()}</p>
                 </div>
                 <div>
-                  <p className="text-white/40">Expira</p>
+                  <p className="text-muted">Expira</p>
                   <p title={new Date(s.expires_at).toLocaleString()}>{relativeTime(s.expires_at)}</p>
                 </div>
               </div>
@@ -151,7 +151,7 @@ export default function SubscribersPage() {
       {!loading && rows.length > 0 && (
         <div className="mt-6 card hidden sm:block overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="text-white/60 text-left">
+            <thead className="text-muted text-left">
               <tr>
                 <th scope="col" className="py-2">Wallet</th>
                 <th scope="col">Plan</th>
@@ -162,7 +162,7 @@ export default function SubscribersPage() {
             </thead>
             <tbody>
               {rows.map((s) => (
-                <tr key={s.id} className="border-t border-surface-border">
+                <tr key={s.id} className="border-t border-sep">
                   <td className="py-2 font-mono text-xs" title={s.wallet}>
                     {truncWallet(s.wallet)}
                   </td>
@@ -185,17 +185,17 @@ export default function SubscribersPage() {
 function Metric({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div className="card">
-      <p className="text-xs text-white/60">{label}</p>
+      <p className="text-xs text-muted">{label}</p>
       <p className="mt-1 text-2xl font-bold">{value}</p>
-      {hint && <p className="text-xs text-white/40">{hint}</p>}
+      {hint && <p className="text-xs text-muted">{hint}</p>}
     </div>
   );
 }
 
 function StatusBadge({ active }: { active: boolean }) {
   return active ? (
-    <span className="text-green-400 text-xs">● activo</span>
+    <span className="text-status-ok text-xs">● activo</span>
   ) : (
-    <span className="text-white/40 text-xs">○ expirado</span>
+    <span className="text-muted text-xs">○ expirado</span>
   );
 }

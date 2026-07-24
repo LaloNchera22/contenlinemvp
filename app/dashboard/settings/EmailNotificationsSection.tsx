@@ -113,13 +113,13 @@ export default function EmailNotificationsSection() {
   return (
     <div className="card mt-6">
       <h2 className="font-semibold">Notificaciones por email</h2>
-      <p className="text-sm text-white/60 mt-1">
+      <p className="text-sm text-muted mt-1">
         Recibe un aviso cuando ocurra algo importante en tu cuenta. Tu email es
         privado y solo se usa para estas notificaciones.
       </p>
 
       {loading ? (
-        <p className="text-sm text-white/60 mt-3">Cargando…</p>
+        <p className="text-sm text-muted mt-3">Cargando…</p>
       ) : (
         <>
           <div className="mt-4 flex flex-col sm:flex-row gap-2 sm:items-end">
@@ -141,15 +141,15 @@ export default function EmailNotificationsSection() {
           </div>
 
           {verified ? (
-            <p className="text-xs text-green-400 mt-2">✓ Email verificado</p>
+            <p className="text-xs text-status-ok mt-2">✓ Email verificado</p>
           ) : (
-            <p className="text-xs text-amber-400 mt-2">
+            <p className="text-xs text-status-warn mt-2">
               Email sin verificar. No recibirás notificaciones hasta confirmarlo.
             </p>
           )}
 
           {status && (
-            <p className={`text-sm mt-3 ${statusOk ? 'text-green-400' : 'text-amber-400'}`} role="status">
+            <p className={`text-sm mt-3 ${statusOk ? 'text-status-ok' : 'text-status-warn'}`} role="status">
               {status}
             </p>
           )}

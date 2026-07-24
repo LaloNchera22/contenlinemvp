@@ -32,7 +32,7 @@ export default function AgeGate({ username }: { username: string }) {
         <h2 id="age-gate-title" className="text-xl font-bold">
           Contenido para adultos
         </h2>
-        <p className="mt-3 text-sm text-white/70">
+        <p className="mt-3 text-sm text-muted">
           El perfil de @{username} contiene material para adultos. Debes ser mayor de
           edad en tu jurisdicción para continuar.
         </p>

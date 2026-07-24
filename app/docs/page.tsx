@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 function Code({ children }: { children: string }) {
   return (
-    <pre className="mt-3 overflow-x-auto rounded-lg border border-surface-border bg-surface p-4 text-xs leading-relaxed">
+    <pre className="mt-3 overflow-x-auto rounded-control border border-sep bg-surface p-4 text-xs leading-relaxed">
       <code>{children}</code>
     </pre>
   );
@@ -24,7 +24,7 @@ function Section({ id, title, children }: { id: string; title: string; children:
   return (
     <section id={id} className="mt-12 scroll-mt-20">
       <h2 className="text-xl font-semibold">{title}</h2>
-      <div className="mt-3 space-y-3 text-sm text-white/70">{children}</div>
+      <div className="mt-3 space-y-3 text-sm text-muted">{children}</div>
     </section>
   );
 }
@@ -32,18 +32,18 @@ function Section({ id, title, children }: { id: string; title: string; children:
 export default function DocsPage() {
   return (
     <main className="min-h-screen max-w-3xl mx-auto px-6 py-16">
-      <Link href="/" className="text-sm text-white/60 hover:text-white">
+      <Link href="/" className="text-sm text-muted hover:text-ink">
         ← Contenline
       </Link>
 
       <h1 className="mt-6 text-3xl font-bold">Documentación de la API</h1>
-      <p className="mt-3 text-white/60">
+      <p className="mt-3 text-muted">
         Integra pagos en USDC sobre Polygon en tu app. Crea un checkout embebible,
         deja que tu usuario pague onchain y recibe un webhook firmado cuando el pago
         se completa.
       </p>
 
-      <nav className="mt-6 flex flex-wrap gap-x-4 gap-y-1 text-sm text-brand-light">
+      <nav className="mt-6 flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink">
         <a href="#auth" className="hover:underline">Autenticación</a>
         <a href="#checkout" className="hover:underline">Crear checkout</a>
         <a href="#sessions" className="hover:underline">Consultar sesión</a>
@@ -138,7 +138,7 @@ Contenline-Event-Id:    <único por EVENTO; se repite en reintentos>`}</Code>
           <li><code>subscription.created</code> — nueva suscripción (ver nota abajo).</li>
           <li><code>subscription.renewed</code> — renovación de una suscripción.</li>
         </ul>
-        <p className="text-white/60">
+        <p className="text-muted">
           Nota: los eventos de suscripción se emiten para checkouts de suscripción
           que incluyan <code>webhook_url</code>. Las suscripciones iniciadas desde el
           perfil público del creador (sin sesión de API) no disparan webhook porque

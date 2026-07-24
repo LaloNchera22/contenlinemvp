@@ -156,14 +156,14 @@ export default function PlansPage() {
   return (
     <div className="max-w-3xl">
       <h1 className="text-2xl font-bold">Planes de suscripción</h1>
-      <p className="text-white/60 text-sm mt-1">
+      <p className="text-muted text-sm mt-1">
         Define precio y periodicidad. El plan vive onchain: tras crearlo confirma la
         transacción en tu wallet para que tus fans puedan suscribirse.
       </p>
 
       {!isConnected && (
         <div className="card mt-6">
-          <p className="text-sm text-white/70 mb-3">
+          <p className="text-sm text-muted mb-3">
             Conecta tu wallet para registrar planes onchain.
           </p>
           <ConnectButton label="Conecta tu wallet" />
@@ -205,17 +205,17 @@ export default function PlansPage() {
             <button onClick={resetForm} disabled={busy} className="btn-ghost">Cancelar</button>
           )}
         </div>
-        {status && <p className="text-sm text-white/70" role="status" aria-live="polite">{status}</p>}
-        {error && <p className="text-sm text-red-400" role="alert">{error}</p>}
+        {status && <p className="text-sm text-muted" role="status" aria-live="polite">{status}</p>}
+        {error && <p className="text-sm text-status-danger" role="alert">{error}</p>}
       </div>
 
       <div className="mt-6 space-y-2">
         {loading ? (
-          <p className="text-sm text-white/60">Cargando planes…</p>
+          <p className="text-sm text-muted">Cargando planes…</p>
         ) : plans.length === 0 ? (
           <div className="card text-center py-10">
             <p className="font-medium">Aún no tienes planes</p>
-            <p className="text-sm text-white/60 mt-1">
+            <p className="text-sm text-muted mt-1">
               Define tu primer plan para empezar a recibir suscripciones.
             </p>
           </div>
@@ -225,13 +225,13 @@ export default function PlansPage() {
               <div>
                 <p className="font-medium">
                   {p.name}{' '}
-                  <span className="text-xs text-white/60">
+                  <span className="text-xs text-muted">
                     (${Number(p.price_usdc).toFixed(2)} USDC / {p.interval === 'monthly' ? 'mes' : 'año'})
                   </span>
                 </p>
                 <p className="text-xs mt-1" role="status" aria-live="polite">
                   {!p.active ? (
-                    <span className="text-white/40">desactivado</span>
+                    <span className="text-muted">desactivado</span>
                   ) : p.onchain_synced ? (
                     <span
                       className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-emerald-400"
@@ -241,7 +241,7 @@ export default function PlansPage() {
                     </span>
                   ) : (
                     <span
-                      className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-amber-400 animate-pulse"
+                      className="inline-flex items-center gap-1 rounded-full bg-status-warn/15 px-2 py-0.5 text-status-warn animate-pulse"
                       title="Esperando confirmación onchain. Esto puede tardar hasta 5 minutos. Refresca la página para actualizar el estado."
                     >
                       ◔ Sincronizando…
@@ -252,7 +252,7 @@ export default function PlansPage() {
               {p.active && (
                 <div className="flex gap-2 shrink-0">
                   <button onClick={() => startEdit(p)} disabled={busy} className="btn-ghost">Editar</button>
-                  <button onClick={() => setToDeactivate(p)} disabled={busy} className="btn-ghost text-red-400">
+                  <button onClick={() => setToDeactivate(p)} disabled={busy} className="btn-ghost text-status-danger">
                     Desactivar
                   </button>
                 </div>

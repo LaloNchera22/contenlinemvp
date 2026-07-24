@@ -32,9 +32,9 @@ export default function DashboardHome() {
   return (
     <div>
       <h1 className="text-2xl font-bold">Resumen del mes</h1>
-      <p className="text-white/60 text-sm mt-1">Métricas de tu actividad en Contenline.</p>
+      <p className="text-muted text-sm mt-1">Métricas de tu actividad en Contenline.</p>
 
-      {error && <p className="mt-6 text-sm text-amber-400" role="alert">{error}</p>}
+      {error && <p className="mt-6 text-sm text-status-warn" role="alert">{error}</p>}
 
       <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Stat label="Ingreso bruto" value={metrics ? usd(metrics.grossRevenue) : '—'} />
@@ -46,7 +46,7 @@ export default function DashboardHome() {
       {isNewCreator && (
         <div className="mt-10">
           <h2 className="text-lg font-semibold">Primeros pasos</h2>
-          <p className="text-sm text-white/60 mt-1">
+          <p className="text-sm text-muted mt-1">
             Aún no tienes actividad. Empieza por aquí:
           </p>
           <div className="mt-4 grid sm:grid-cols-3 gap-4">
@@ -87,12 +87,12 @@ function OnboardingCard({
   body: string;
 }) {
   return (
-    <Link href={href} className="card hover:border-brand transition-colors block">
-      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-brand text-xs font-bold text-surface">
+    <Link href={href} className="card hover:border-muted transition-colors block">
+      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-ink text-xs font-bold text-bg">
         {step}
       </span>
-      <p className="mt-3 font-semibold text-brand-light">{title}</p>
-      <p className="mt-1 text-sm text-white/60">{body}</p>
+      <p className="mt-3 font-semibold text-ink">{title}</p>
+      <p className="mt-1 text-sm text-muted">{body}</p>
     </Link>
   );
 }
@@ -101,7 +101,7 @@ function Stat({ label, value, highlight }: { label: string; value: string; highl
   return (
     <div className="card">
       <p className="label">{label}</p>
-      <p className={`text-2xl font-bold ${highlight ? 'text-brand-light' : ''}`}>{value}</p>
+      <p className={`text-2xl font-bold ${highlight ? 'text-ink' : ''}`}>{value}</p>
     </div>
   );
 }

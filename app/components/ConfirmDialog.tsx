@@ -77,7 +77,7 @@ export default function ConfirmDialog({
           {title}
         </h2>
         {description && (
-          <div id={descId} className="mt-2 text-sm text-white/70">
+          <div id={descId} className="mt-2 text-sm text-muted">
             {description}
           </div>
         )}
@@ -85,7 +85,7 @@ export default function ConfirmDialog({
         {requireTypeConfirmation !== undefined && (
           <div className="mt-4">
             <label className="label" htmlFor={`${titleId}-type`}>
-              Escribe <span className="font-mono text-white/90">{requireTypeConfirmation}</span> para confirmar
+              Escribe <span className="font-mono text-ink">{requireTypeConfirmation}</span> para confirmar
             </label>
             <input
               id={`${titleId}-type`}
@@ -104,7 +104,7 @@ export default function ConfirmDialog({
           <button
             onClick={onConfirm}
             disabled={confirmDisabled}
-            className={`btn ${danger ? 'bg-red-600 hover:bg-red-700 text-white' : 'btn-primary'} disabled:opacity-40 disabled:cursor-not-allowed`}
+            className={`btn ${danger ? 'bg-danger hover:opacity-90 text-ink' : 'btn-primary'} disabled:opacity-40 disabled:cursor-not-allowed`}
           >
             {confirmText}
           </button>

@@ -21,9 +21,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-screen">
-      <aside className="w-60 shrink-0 border-r border-surface-border bg-surface-card/40 p-4 flex flex-col">
+      <aside className="w-60 shrink-0 border-r border-sep bg-surface p-4 flex flex-col">
         <Link href="/" className="text-lg font-bold mb-8">
-          Conten<span className="text-brand">line</span>
+          Conten<span className="text-ink">line</span>
         </Link>
         <nav className="flex flex-col gap-1">
           {NAV.map((item) => {
@@ -32,10 +32,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Link
                 key={item.href}
                 href={item.href}
-                className={`rounded-md px-3 py-2 text-sm transition-colors ${
+                className={`rounded-control px-3 py-2 text-sm transition-colors ${
                   active
-                    ? 'bg-brand-dark/30 text-brand'
-                    : 'text-white/60 hover:bg-surface-border/40 hover:text-white'
+                    ? 'bg-surface text-ink'
+                    : 'text-muted hover:bg-surface hover:text-ink'
                 }`}
               >
                 {item.label}
@@ -46,7 +46,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       <div className="flex-1 flex flex-col">
-        <header className="flex items-center justify-end gap-4 border-b border-surface-border px-6 py-3">
+        <header className="flex items-center justify-end gap-4 border-b border-sep px-6 py-3">
           <ConnectButton showBalance={false} />
         </header>
         <main className="flex-1 p-6">{children}</main>

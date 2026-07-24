@@ -96,7 +96,7 @@ export default function CheckoutClient({
         </button>
       )}
       {status && (
-        <p className="mt-3 text-xs text-white/70" role="status" aria-live="polite">
+        <p className="mt-3 text-xs text-muted" role="status" aria-live="polite">
           {status}
         </p>
       )}

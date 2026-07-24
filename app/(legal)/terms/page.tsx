@@ -6,7 +6,7 @@ export default function TermsPage() {
   return (
     <LegalShell title="Términos de servicio" updated="16 de junio de 2026">
       <section>
-        <h2 className="text-lg font-semibold text-white">1. Naturaleza non-custodial</h2>
+        <h2 className="text-lg font-semibold text-ink">1. Naturaleza non-custodial</h2>
         <p>
           Contenline es un protocolo <strong>non-custodial</strong>. Los pagos se ejecutan
           directamente entre las wallets del pagador y del creador mediante contratos
@@ -16,7 +16,7 @@ export default function TermsPage() {
         </p>
       </section>
       <section>
-        <h2 className="text-lg font-semibold text-white">2. No somos una ITF</h2>
+        <h2 className="text-lg font-semibold text-ink">2. No somos una ITF</h2>
         <p>
           Al no custodiar fondos ni intermediar pagos, Contenline no opera como Institución de
           Tecnología Financiera (ITF) bajo la Ley para Regular las Instituciones de Tecnología
@@ -26,7 +26,7 @@ export default function TermsPage() {
         </p>
       </section>
       <section>
-        <h2 className="text-lg font-semibold text-white">3. KYC / AML</h2>
+        <h2 className="text-lg font-semibold text-ink">3. KYC / AML</h2>
         <p>
           La plataforma no realiza, por sí misma, identificación de clientes (KYC) ni custodia
           de fondos. Los usuarios se obligan a no utilizar el servicio para lavado de dinero,
@@ -34,7 +34,7 @@ export default function TermsPage() {
         </p>
       </section>
       <section>
-        <h2 className="text-lg font-semibold text-white">4. Contenido</h2>
+        <h2 className="text-lg font-semibold text-ink">4. Contenido</h2>
         <p>
           Los creadores son los únicos responsables del contenido que publican. El contenido
           para adultos debe marcarse como tal (age-gate) y los creadores deben cumplir las
@@ -44,7 +44,7 @@ export default function TermsPage() {
         </p>
       </section>
       <section>
-        <h2 className="text-lg font-semibold text-white">5. Riesgos</h2>
+        <h2 className="text-lg font-semibold text-ink">5. Riesgos</h2>
         <p>
           Las transacciones en blockchain son irreversibles. El uso de wallets y criptoactivos
           conlleva riesgos; aceptas usar el servicio bajo tu propia responsabilidad.

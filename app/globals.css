@@ -2,38 +2,145 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Capa de tokens. El chrome es acromático y vive en variables CSS que cambian
+ * entre claro y oscuro. Claro es el default; el modo oscuro se activa por
+ * prefers-color-scheme (salvo que el usuario fuerce claro) o por data-theme.
+ */
 :root {
-  color-scheme: dark;
+  --bg: #FFFFFF;
+  --surface: #F5F5F7;
+  --text: #1D1D1F;
+  --text2: #6E6E73;
+  --sep: rgba(0, 0, 0, 0.12);
+
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-hi: rgba(255, 255, 255, 0.55);
+  --scrim: rgba(0, 0, 0, 0.45);
+
+  /* Estado de feedback (texto), AA sobre fondo claro. */
+  --st-danger: #C0392B;
+  --st-ok: #157347;
+  --st-warn: #8A5000;
+
+  /* Nombres de familia literales: si Inter/Geist Mono no están instaladas,
+     el stack simplemente sigue al siguiente candidato. next/font puede
+     sobreescribir estas variables sin tocar el resto del sistema. */
+  --font-inter: 'Inter';
+  --font-geist-mono: 'Geist Mono';
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #000000;
+    --surface: #1C1C1E;
+    --text: #F5F5F7;
+    --text2: #98989D;
+    --sep: rgba(255, 255, 255, 0.16);
+
+    --glass-bg: rgba(28, 28, 30, 0.72);
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --glass-hi: rgba(255, 255, 255, 0.10);
+    --scrim: rgba(0, 0, 0, 0.6);
+
+    --st-danger: #FF6B6B;
+    --st-ok: #4ADE80;
+    --st-warn: #E6A93A;
+  }
+}
+
+/* Toggle manual: gana sobre la preferencia del sistema en ambos sentidos. */
+:root[data-theme='dark'] {
+  --bg: #000000;
+  --surface: #1C1C1E;
+  --text: #F5F5F7;
+  --text2: #98989D;
+  --sep: rgba(255, 255, 255, 0.16);
+
+  --glass-bg: rgba(28, 28, 30, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-hi: rgba(255, 255, 255, 0.10);
+  --scrim: rgba(0, 0, 0, 0.6);
+
+  --st-danger: #FF6B6B;
+  --st-ok: #4ADE80;
+  --st-warn: #E6A93A;
+}
+
+html {
+  background-color: var(--bg);
+  color-scheme: light dark;
 }
 
 body {
-  background-color: #121212;
-  color: #ededed;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, var(--font-inter), 'Segoe UI', sans-serif;
+  /* Cuerpo a 17px como Apple, no 16. */
+  font-size: 17px;
+  line-height: 1.47;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background-color: rgba(62, 207, 142, 0.35);
+  background-color: var(--sep);
+}
+
+/* Curvatura continua (squircle) como mejora progresiva donde el navegador la
+   soporte; en el resto queda el radio redondo aproximado. */
+@supports (corner-shape: squircle) {
+  .rounded-control,
+  .rounded-card,
+  .rounded-sheet {
+    corner-shape: squircle;
+  }
 }
 
 @layer components {
+  /* --- Escala tipográfica --- */
+  .t-display {
+    font-size: clamp(40px, 7vw, 80px);
+    font-weight: 600;
+    letter-spacing: -0.022em;
+    line-height: 1.05;
+  }
+  .t-title {
+    font-size: clamp(26px, 3.5vw, 34px);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1.15;
+  }
+  .t-body {
+    font-size: 17px;
+    font-weight: 400;
+    line-height: 1.47;
+  }
+  .t-caption {
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.4;
+  }
+
+  /* --- Superficies y controles --- */
   .card {
-    @apply bg-surface-card border border-surface-border rounded-xl p-5 transition-colors hover:border-white/20;
+    @apply bg-surface border border-sep rounded-card p-5 transition-colors;
   }
   .btn {
-    @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand;
+    @apply inline-flex items-center justify-center rounded-control px-4 py-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink;
   }
+  /* Primario acromático: alto contraste invertido (negro↔blanco), nunca marca. */
   .btn-primary {
-    @apply btn bg-brand-dark text-white border border-brand-dim/60 hover:bg-brand-dim/50 hover:border-brand;
+    @apply btn bg-ink text-bg hover:opacity-90;
   }
   .btn-ghost {
-    @apply btn border border-surface-border bg-surface-card hover:bg-surface-border/40 text-white;
+    @apply btn border border-sep bg-surface text-ink hover:border-muted;
   }
   .label {
-    /* /60 mínimo para cumplir el contraste WCAG AA (4.5:1) sobre la card. */
-    @apply block text-xs uppercase tracking-wide text-white/60 mb-1;
+    @apply block text-xs uppercase tracking-wide text-muted mb-1;
   }
   .input {
-    @apply w-full rounded-md bg-surface border border-surface-border px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand/40;
+    @apply w-full rounded-control bg-surface border border-sep px-3 py-2 text-sm text-ink outline-none focus:border-muted focus:ring-1 focus:ring-muted;
   }
 }
