@@ -144,3 +144,67 @@ body {
     @apply w-full rounded-control bg-surface border border-sep px-3 py-2 text-sm text-ink outline-none focus:border-muted focus:ring-1 focus:ring-muted;
   }
 }
+
+/*
+ * Cristal. No es refracción (eso pide WebGL o filtros SVG caros y tira frames):
+ * es una capa translúcida con desenfoque + saturación y un highlight interior.
+ * Solo en header sticky, tab bar móvil, barra flotante, fondo de sheet y la
+ * píldora de precio sobre una portada — nunca sobre la capa del dinero.
+ *
+ * Baseline sólido y opaco: sin soporte de backdrop-filter el cristal cae a
+ * fondo sólido (primera salvaguarda). El desenfoque solo se añade cuando el
+ * navegador lo soporta.
+ */
+.glass {
+  background: var(--surface);
+  border: 0.5px solid var(--glass-border);
+  box-shadow: inset 0 1px 0 var(--glass-hi);
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+  }
+}
+
+/* Segunda salvaguarda: transparencia reducida elimina el desenfoque y vuelve a
+   fondo sólido. Va después del @supports para ganarle. Requisito de a11y. */
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    background: var(--surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* Tercera salvaguarda (coste en móvil): will-change solo en el header, la única
+   superficie de cristal que se repinta en cada frame del scroll. */
+.glass-header {
+  will-change: backdrop-filter;
+}
+
+/*
+ * Capa del dinero. Fuerza mono + tabular-nums y prohíbe cristal, filtro y
+ * transformación: un importe o un hash nunca puede quedar sobre contenido
+ * desenfocado que se mueve al hacer scroll, justo cuando el usuario verifica
+ * que su dinero existe. Fondo sólido heredado del contenedor (bg/surface).
+ */
+.money {
+  font-family: ui-monospace, 'SF Mono', var(--font-geist-mono), Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+/* Variante en chip para importes prominentes (total de checkout, ingresos):
+   fondo sólido explícito, nunca translúcido. */
+.money-chip {
+  background: var(--surface);
+  border: 1px solid var(--sep);
+  border-radius: 12px;
+}

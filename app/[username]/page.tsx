@@ -136,7 +136,7 @@ export default async function CreatorPage({ params }: { params: { username: stri
           <div key={p.id} className="card">
             <p className="font-semibold text-ink">{p.name}</p>
             {p.description && <p className="text-sm text-muted mt-1">{p.description}</p>}
-            <p className="mt-3 text-2xl font-bold">
+            <p className="money mt-3 text-2xl font-bold">
               ${Number(p.price_usdc).toFixed(2)}{' '}
               <span className="text-sm font-normal text-muted">
                 USDC / {p.interval === 'monthly' ? 'mes' : 'año'}

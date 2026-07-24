@@ -123,7 +123,7 @@ export default function ServicesPage() {
               <div>
                 <p className="font-medium">
                   {s.title}{' '}
-                  <span className="text-xs text-muted">(${Number(s.price_usdc).toFixed(2)} USDC)</span>
+                  <span className="money text-xs text-muted">(${Number(s.price_usdc).toFixed(2)} USDC)</span>
                 </p>
                 {!s.active && <p className="text-xs mt-1 text-muted">inactivo</p>}
               </div>

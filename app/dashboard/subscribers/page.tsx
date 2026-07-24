@@ -126,7 +126,7 @@ export default function SubscribersPage() {
           {rows.map((s) => (
             <div key={s.id} className="card">
               <div className="flex items-center justify-between">
-                <span className="font-mono text-xs" title={s.wallet}>
+                <span className="money text-xs" title={s.wallet}>
                   {truncWallet(s.wallet)}
                 </span>
                 <StatusBadge active={s.active} />
@@ -163,7 +163,7 @@ export default function SubscribersPage() {
             <tbody>
               {rows.map((s) => (
                 <tr key={s.id} className="border-t border-sep">
-                  <td className="py-2 font-mono text-xs" title={s.wallet}>
+                  <td className="py-2 money text-xs" title={s.wallet}>
                     {truncWallet(s.wallet)}
                   </td>
                   <td>{s.plan_name ?? '—'}</td>

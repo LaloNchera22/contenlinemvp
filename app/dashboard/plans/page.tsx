@@ -225,7 +225,7 @@ export default function PlansPage() {
               <div>
                 <p className="font-medium">
                   {p.name}{' '}
-                  <span className="text-xs text-muted">
+                  <span className="money text-xs text-muted">
                     (${Number(p.price_usdc).toFixed(2)} USDC / {p.interval === 'monthly' ? 'mes' : 'año'})
                   </span>
                 </p>

@@ -130,7 +130,7 @@ export default function KeysPage() {
               Copia esta key ahora — no volverá a mostrarse:
             </p>
             <div className="flex items-center gap-2">
-              <code className="font-mono text-sm break-all flex-1">{newSecret}</code>
+              <code className="money text-sm break-all flex-1">{newSecret}</code>
               <button onClick={copySecret} className="btn-ghost shrink-0">
                 {copied ? 'Copiada ✓' : 'Copiar'}
               </button>
@@ -147,7 +147,7 @@ export default function KeysPage() {
                 {k.name}{' '}
                 <span className="text-xs text-muted">({k.environment})</span>
               </p>
-              <p className="font-mono text-xs text-muted">
+              <p className="money text-xs text-muted">
                 {k.key_prefix}••••••• · {k.calls_count} llamadas
                 {k.volume_usdc != null && ` · $${Number(k.volume_usdc).toFixed(2)} USDC`}
               </p>

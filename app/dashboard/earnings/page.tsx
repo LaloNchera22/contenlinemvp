@@ -76,21 +76,21 @@ export default function EarningsPage() {
                   {new Date(t.created_at).toLocaleDateString()}
                 </span>
               </div>
-              <p className="mt-1 font-mono text-xs text-muted">
+              <p className="money mt-1 text-xs text-muted">
                 {t.from_wallet.slice(0, 6)}…{t.from_wallet.slice(-4)}
               </p>
               <div className="mt-3 grid grid-cols-3 gap-2 text-sm">
                 <div>
                   <p className="text-xs text-muted">Monto</p>
-                  <p>${Number(t.amount_usdc).toFixed(2)}</p>
+                  <p className="money">${Number(t.amount_usdc).toFixed(2)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted">Comisión</p>
-                  <p>${Number(t.fee_usdc).toFixed(2)}</p>
+                  <p className="money">${Number(t.fee_usdc).toFixed(2)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted">Neto</p>
-                  <p className="text-ink">${Number(t.net_usdc).toFixed(2)}</p>
+                  <p className="money text-ink">${Number(t.net_usdc).toFixed(2)}</p>
                 </div>
               </div>
               <p className="mt-2 text-xs">
@@ -125,12 +125,12 @@ export default function EarningsPage() {
                 <tr key={t.id} className="border-t border-sep">
                   <td className="py-2">{new Date(t.created_at).toLocaleDateString()}</td>
                   <td className="capitalize">{t.category}</td>
-                  <td className="font-mono text-xs">
+                  <td className="money text-xs">
                     {t.from_wallet.slice(0, 6)}…{t.from_wallet.slice(-4)}
                   </td>
-                  <td className="text-right">${Number(t.amount_usdc).toFixed(2)}</td>
-                  <td className="text-right text-muted">${Number(t.fee_usdc).toFixed(2)}</td>
-                  <td className="text-right text-ink">${Number(t.net_usdc).toFixed(2)}</td>
+                  <td className="money text-right">${Number(t.amount_usdc).toFixed(2)}</td>
+                  <td className="money text-right text-muted">${Number(t.fee_usdc).toFixed(2)}</td>
+                  <td className="money text-right text-ink">${Number(t.net_usdc).toFixed(2)}</td>
                   <td className="text-right">
                     {t.verified ? (
                       <span className="text-status-ok">✓ verificada</span>

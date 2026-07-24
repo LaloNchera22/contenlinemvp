@@ -101,7 +101,7 @@ function Stat({ label, value, highlight }: { label: string; value: string; highl
   return (
     <div className="card">
       <p className="label">{label}</p>
-      <p className={`text-2xl font-bold ${highlight ? 'text-ink' : ''}`}>{value}</p>
+      <p className={`money text-2xl font-bold ${highlight ? 'text-ink' : ''}`}>{value}</p>
     </div>
   );
 }
