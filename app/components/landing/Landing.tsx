@@ -8,6 +8,7 @@ import HeaderWallet from './HeaderWallet';
 import ThemeToggle from '../ThemeToggle';
 import ChallengeCard from '../ChallengeCard';
 import BrandMark from '../BrandMark';
+import Reveal from '../Reveal';
 
 /**
  * Landing pública multilenguaje (server component). Pila de mosaicos al estilo
@@ -114,8 +115,9 @@ export default function Landing({ locale }: { locale: Locale }) {
       {/* Un mosaico por mensaje: el acento sale del contenido, no del chrome. */}
       <section className="mx-auto grid max-w-6xl gap-5 px-6 pb-20 md:grid-cols-3">
         {dict.features.map((f, i) => (
-          <article
+          <Reveal
             key={f.title}
+            index={i}
             className="flex flex-col overflow-hidden rounded-card border border-sep bg-surface"
           >
             <div
@@ -128,7 +130,7 @@ export default function Landing({ locale }: { locale: Locale }) {
               <h2 className="text-[17px] font-semibold text-ink">{f.title}</h2>
               <p className="mt-2 text-sm leading-relaxed text-muted">{f.body}</p>
             </div>
-          </article>
+          </Reveal>
         ))}
       </section>
 
@@ -139,15 +141,16 @@ export default function Landing({ locale }: { locale: Locale }) {
           <p className="mt-3 max-w-2xl text-muted">{dict.showcase.note}</p>
           <div className="mt-10 grid gap-6 [grid-template-columns:repeat(auto-fill,minmax(260px,1fr))]">
             {dict.showcase.items.map((c, i) => (
-              <ChallengeCard
-                key={c.title}
-                id={`showcase-${i}`}
-                title={c.title}
-                amountUsdc={c.amount}
-                creator={c.creator}
-                statusLabel={c.status}
-                accent={ACCENTS[(i * 3 + 4) % ACCENTS.length]}
-              />
+              <Reveal key={c.title} index={i}>
+                <ChallengeCard
+                  id={`showcase-${i}`}
+                  title={c.title}
+                  amountUsdc={c.amount}
+                  creator={c.creator}
+                  statusLabel={c.status}
+                  accent={ACCENTS[(i * 3 + 4) % ACCENTS.length]}
+                />
+              </Reveal>
             ))}
           </div>
         </div>
