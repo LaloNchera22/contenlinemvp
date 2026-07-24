@@ -41,7 +41,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <aside className="hidden w-60 shrink-0 flex-col border-r border-sep bg-surface p-4 lg:flex">
         <Link href="/" className="mb-8 flex items-center gap-2 text-lg font-semibold text-ink">
           <BrandMark className="h-6 w-6" />
-          Contenline
+          Dare
         </Link>
         <nav className="flex flex-col gap-1">
           {ALL.map((item) => (

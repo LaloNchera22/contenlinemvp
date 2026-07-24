@@ -9,12 +9,12 @@ import { siteUrl } from '@/lib/seo';
 export const metadata: Metadata = {
   metadataBase: siteUrl(),
   title: {
-    default: 'Contenline — Monetización cripto para creadores',
-    template: '%s · Contenline',
+    default: 'Dare — Monetización cripto para creadores',
+    template: '%s · Dare',
   },
   description:
     'Panel de creador + infraestructura de pagos cripto en Polygon. Suscripciones, cursos, servicios y API para developers.',
-  applicationName: 'Contenline',
+  applicationName: 'Dare',
   robots: {
     index: true,
     follow: true,
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    siteName: 'Contenline',
+    siteName: 'Dare',
     type: 'website',
   },
   formatDetection: { telephone: false },

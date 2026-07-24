@@ -1,6 +1,6 @@
 import { LegalShell } from '../legal';
 
-export const metadata = { title: 'Política de cookies — Contenline' };
+export const metadata = { title: 'Política de cookies — Dare' };
 
 export default function CookiesPage() {
   return (
@@ -8,7 +8,7 @@ export default function CookiesPage() {
       <section>
         <h2 className="text-lg font-semibold text-ink">1. Qué usamos</h2>
         <p>
-          Contenline utiliza únicamente almacenamiento <strong>estrictamente necesario</strong>{' '}
+          Dare utiliza únicamente almacenamiento <strong>estrictamente necesario</strong>{' '}
           para funcionar:
         </p>
         <ul className="list-disc pl-5 space-y-1 mt-2">

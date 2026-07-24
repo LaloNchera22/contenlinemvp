@@ -79,7 +79,7 @@ export type LandingDict = {
 export const dictionaries: Record<Locale, LandingDict> = {
   es: {
     meta: {
-      title: 'Contenline — Monetización cripto para creadores',
+      title: 'Dare — Monetización cripto para creadores',
       description:
         'Suscripciones, cursos y servicios con pagos en USDC sobre Polygon. Panel de creador + API de pagos cripto estilo Stripe para developers.',
       keywords: [
@@ -137,7 +137,7 @@ export const dictionaries: Record<Locale, LandingDict> = {
       ],
     },
     footer: {
-      tagline: 'Contenline · Protocolo non-custodial de pagos en USDC sobre Polygon',
+      tagline: 'Dare · Protocolo non-custodial de pagos en USDC sobre Polygon',
       dashboard: 'Dashboard',
       docs: 'API · Docs',
       privacy: 'Privacidad',
@@ -148,7 +148,7 @@ export const dictionaries: Record<Locale, LandingDict> = {
   },
   en: {
     meta: {
-      title: 'Contenline — Crypto monetization for creators',
+      title: 'Dare — Crypto monetization for creators',
       description:
         'Subscriptions, courses and services paid in USDC on Polygon. Creator dashboard + a Stripe-style crypto payments API for developers.',
       keywords: [
@@ -206,7 +206,7 @@ export const dictionaries: Record<Locale, LandingDict> = {
       ],
     },
     footer: {
-      tagline: 'Contenline · Non-custodial USDC payments protocol on Polygon',
+      tagline: 'Dare · Non-custodial USDC payments protocol on Polygon',
       dashboard: 'Dashboard',
       docs: 'API · Docs',
       privacy: 'Privacy',
@@ -217,7 +217,7 @@ export const dictionaries: Record<Locale, LandingDict> = {
   },
   pt: {
     meta: {
-      title: 'Contenline — Monetização cripto para criadores',
+      title: 'Dare — Monetização cripto para criadores',
       description:
         'Assinaturas, cursos e serviços pagos em USDC na Polygon. Painel do criador + API de pagamentos cripto estilo Stripe para developers.',
       keywords: [
@@ -275,7 +275,7 @@ export const dictionaries: Record<Locale, LandingDict> = {
       ],
     },
     footer: {
-      tagline: 'Contenline · Protocolo non-custodial de pagamentos em USDC na Polygon',
+      tagline: 'Dare · Protocolo non-custodial de pagamentos em USDC na Polygon',
       dashboard: 'Dashboard',
       docs: 'API · Docs',
       privacy: 'Privacidade',

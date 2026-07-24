@@ -1,6 +1,6 @@
 import { LegalShell } from '../legal';
 
-export const metadata = { title: 'Términos de servicio — Contenline' };
+export const metadata = { title: 'Términos de servicio — Dare' };
 
 export default function TermsPage() {
   return (
@@ -8,7 +8,7 @@ export default function TermsPage() {
       <section>
         <h2 className="text-lg font-semibold text-ink">1. Naturaleza non-custodial</h2>
         <p>
-          Contenline es un protocolo <strong>non-custodial</strong>. Los pagos se ejecutan
+          Dare es un protocolo <strong>non-custodial</strong>. Los pagos se ejecutan
           directamente entre las wallets del pagador y del creador mediante contratos
           inteligentes en Polygon, sin que la plataforma custodie, retenga ni controle fondos
           en ningún momento. La plataforma cobra una comisión que se transfiere onchain de
@@ -18,7 +18,7 @@ export default function TermsPage() {
       <section>
         <h2 className="text-lg font-semibold text-ink">2. No somos una ITF</h2>
         <p>
-          Al no custodiar fondos ni intermediar pagos, Contenline no opera como Institución de
+          Al no custodiar fondos ni intermediar pagos, Dare no opera como Institución de
           Tecnología Financiera (ITF) bajo la Ley para Regular las Instituciones de Tecnología
           Financiera (México). Antes de operar en mainnet se recomienda validar este criterio
           con un abogado fintech. Eres responsable del cumplimiento fiscal de los ingresos que

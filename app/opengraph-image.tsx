@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
-export const alt = 'Contenline — Monetización cripto para creadores';
+export const alt = 'Dare — Monetización cripto para creadores';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -20,26 +20,26 @@ export default function OgImage() {
           flexDirection: 'column',
           justifyContent: 'center',
           padding: 96,
-          backgroundColor: '#121212',
-          backgroundImage:
-            'radial-gradient(ellipse at top right, rgba(62,207,142,0.18), transparent 60%)',
-          color: '#EDEDED',
+          backgroundColor: '#000000',
+          color: '#F5F5F7',
           fontSize: 32,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 44, fontWeight: 700 }}>
-          <svg width="44" height="44" viewBox="0 0 24 24" fill="none">
-            <path d="M13 2 3 14h7l-1 8 12-14h-8l0-6z" fill="#3ECF8E" />
+        {/* Chrome acromático: marca en blanco, sin acento de color. */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 44, fontWeight: 600 }}>
+          <svg width="46" height="46" viewBox="0 0 24 24" fill="none">
+            <rect x="1.5" y="1.5" width="21" height="21" rx="6" stroke="#F5F5F7" strokeWidth="2" />
+            <path d="M8 16V8h3.2a4 4 0 0 1 0 8H8z" stroke="#F5F5F7" strokeWidth="2" strokeLinejoin="round" />
           </svg>
-          <span>
-            Conten<span style={{ color: '#3ECF8E' }}>line</span>
-          </span>
+          <span>Dare</span>
         </div>
-        <div style={{ marginTop: 56, fontSize: 76, fontWeight: 700, lineHeight: 1.1, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ marginTop: 56, fontSize: 76, fontWeight: 600, letterSpacing: '-0.022em', lineHeight: 1.05, display: 'flex', flexDirection: 'column' }}>
           <span>Monetiza tu contenido</span>
-          <span style={{ color: '#3ECF8E' }}>sin intermediarios</span>
+          <span>sin intermediarios</span>
         </div>
-        <div style={{ marginTop: 40, fontSize: 30, color: 'rgba(237,237,237,0.6)', maxWidth: 900 }}>
+        {/* El único color sale del contenido: barra de acento como en las portadas. */}
+        <div style={{ marginTop: 32, width: 96, height: 8, borderRadius: 999, backgroundColor: '#2C5FD8' }} />
+        <div style={{ marginTop: 32, fontSize: 30, color: 'rgba(245,245,247,0.6)', maxWidth: 900 }}>
           Suscripciones, cursos y servicios con pagos en USDC sobre Polygon · API para developers
         </div>
       </div>

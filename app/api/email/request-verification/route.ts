@@ -59,10 +59,10 @@ export async function POST(req: NextRequest) {
   const link = `${appUrl}/api/email/verify?token=${token}`;
   const result = await sendEmail({
     to: email,
-    subject: 'Verifica tu email en Contenline',
+    subject: 'Verifica tu email en Dare',
     html: `
       <p>Hola,</p>
-      <p>Confirma este email para activar las notificaciones de tu cuenta de Contenline.</p>
+      <p>Confirma este email para activar las notificaciones de tu cuenta de Dare.</p>
       <p><a href="${link}">Verificar mi email</a></p>
       <p>El enlace caduca en 30 minutos. Si no fuiste tú, ignora este mensaje.</p>
     `,

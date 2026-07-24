@@ -29,7 +29,7 @@ export function landingMetadata(locale: Locale): Metadata {
     openGraph: {
       type: 'website',
       url: path,
-      siteName: 'Contenline',
+      siteName: 'Dare',
       title: dict.meta.title,
       description: dict.meta.description,
       locale: OG_LOCALES[locale],

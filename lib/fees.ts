@@ -1,5 +1,5 @@
 /**
- * Comisiones de Contenline por categoría.
+ * Comisiones de Dare por categoría.
  * Este mismo cálculo está replicado en los smart contracts
  * (ContenlineSubscription.sol y ContenlinePayment.sol).
  */

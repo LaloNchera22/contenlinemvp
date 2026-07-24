@@ -61,7 +61,7 @@ export async function generateMetadata({
   const title = `${user.display_name} (@${user.username})`;
   const description =
     user.bio ??
-    `Suscríbete a ${user.display_name} en Contenline y accede a su contenido exclusivo con pagos en USDC.`;
+    `Suscríbete a ${user.display_name} en Dare y accede a su contenido exclusivo con pagos en USDC.`;
   const avatar = safeHttpsUrl(user.avatar_url);
 
   return {

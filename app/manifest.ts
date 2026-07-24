@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Contenline',
-    short_name: 'Contenline',
+    name: 'Dare',
+    short_name: 'Dare',
     description:
       'Monetización cripto para creadores: suscripciones, cursos y servicios con pagos en USDC sobre Polygon.',
     start_url: '/',

@@ -1,6 +1,6 @@
 import { LegalShell } from '../legal';
 
-export const metadata = { title: 'Aviso de privacidad — Contenline' };
+export const metadata = { title: 'Aviso de privacidad — Dare' };
 
 export default function PrivacyPage() {
   return (
@@ -8,7 +8,7 @@ export default function PrivacyPage() {
       <section>
         <h2 className="text-lg font-semibold text-ink">1. Responsable</h2>
         <p>
-          Contenline (“la plataforma”) trata datos personales conforme al RGPD (UE) y a la
+          Dare (“la plataforma”) trata datos personales conforme al RGPD (UE) y a la
           Ley Federal de Protección de Datos Personales en Posesión de los Particulares
           (México).
         </p>
@@ -48,7 +48,7 @@ export default function PrivacyPage() {
       </section>
       <section>
         <h2 className="text-lg font-semibold text-ink">6. Contacto</h2>
-        <p>Para ejercer tus derechos, escribe a privacidad@contenline.example.</p>
+        <p>Para ejercer tus derechos, escribe a privacidad@dare.example.</p>
       </section>
     </LegalShell>
   );

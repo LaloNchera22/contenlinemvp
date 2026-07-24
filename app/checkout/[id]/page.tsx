@@ -39,7 +39,7 @@ export default async function CheckoutPage({ params }: { params: { id: string } 
   return (
     <main className="min-h-screen flex items-center justify-center px-6 py-16">
       <div className="card w-full max-w-md">
-        <p className="text-xs uppercase tracking-wide text-muted">Pago seguro · Contenline</p>
+        <p className="text-xs uppercase tracking-wide text-muted">Pago seguro · Dare</p>
         <h1 className="money mt-2 text-2xl font-bold">
           ${Number(session.amount_usdc).toFixed(2)} <span className="text-base font-normal text-muted">USDC</span>
         </h1>
@@ -64,7 +64,7 @@ export default async function CheckoutPage({ params }: { params: { id: string } 
         )}
 
         <p className="mt-6 text-[11px] leading-relaxed text-muted">
-          Contenline es un protocolo non-custodial: el pago se ejecuta directamente
+          Dare es un protocolo non-custodial: el pago se ejecuta directamente
           entre tu wallet y la del creador. La plataforma no custodia fondos.
         </p>
       </div>

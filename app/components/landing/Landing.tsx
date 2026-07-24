@@ -28,21 +28,21 @@ export default function Landing({ locale }: { locale: Locale }) {
       {
         '@type': 'Organization',
         '@id': new URL('/#organization', base).toString(),
-        name: 'Contenline',
+        name: 'Dare',
         url: base.toString(),
         description: dict.meta.description,
       },
       {
         '@type': 'WebSite',
         '@id': new URL('/#website', base).toString(),
-        name: 'Contenline',
+        name: 'Dare',
         url: base.toString(),
         inLanguage: locales.map((l) => l),
         publisher: { '@id': new URL('/#organization', base).toString() },
       },
       {
         '@type': 'SoftwareApplication',
-        name: 'Contenline',
+        name: 'Dare',
         applicationCategory: 'FinanceApplication',
         operatingSystem: 'Web',
         url: new URL(localePath(locale), base).toString(),
@@ -68,7 +68,7 @@ export default function Landing({ locale }: { locale: Locale }) {
               className="flex items-center gap-2 text-lg font-semibold text-ink"
             >
               <BrandMark className="h-6 w-6" />
-              Contenline
+              Dare
             </Link>
             <nav className="hidden items-center gap-5 text-sm text-muted sm:flex">
               <Link href="/docs" className="hover:text-ink">

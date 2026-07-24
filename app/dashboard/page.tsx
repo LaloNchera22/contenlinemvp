@@ -32,7 +32,7 @@ export default function DashboardHome() {
   return (
     <div>
       <h1 className="text-2xl font-bold">Resumen del mes</h1>
-      <p className="text-muted text-sm mt-1">Métricas de tu actividad en Contenline.</p>
+      <p className="text-muted text-sm mt-1">Métricas de tu actividad en Dare.</p>
 
       {error && <p className="mt-6 text-sm text-status-warn" role="alert">{error}</p>}
 
