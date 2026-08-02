@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Documentación de la API · Contenline',
+  title: 'Documentación de la API · AdieCoin',
   description:
     'API pública de pagos USDC: crea checkouts, consulta sesiones y recibe webhooks firmados.',
   alternates: { canonical: '/docs' },
@@ -33,7 +33,7 @@ export default function DocsPage() {
   return (
     <main className="min-h-screen max-w-3xl mx-auto px-6 py-16">
       <Link href="/" className="text-sm text-white/60 hover:text-white">
-        ← Contenline
+        ← AdieCoin
       </Link>
 
       <h1 className="mt-6 text-3xl font-bold">Documentación de la API</h1>
@@ -71,7 +71,7 @@ export default function DocsPage() {
           URL de checkout a la que rediriges al comprador. Categorías permitidas:
           <code> onchain</code>, <code>course</code>, <code>service</code>.
         </p>
-        <Code>{`curl -X POST https://contenline.app/api/v1/checkout \\
+        <Code>{`curl -X POST https://adiecoin.app/api/v1/checkout \\
   -H "Authorization: Bearer sk_prod_xxx" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -79,7 +79,7 @@ export default function DocsPage() {
     "category": "service",
     "description": "Consultoría 1h",
     "metadata": { "order_id": "A-1001" },
-    "webhook_url": "https://tuapp.com/webhooks/contenline"
+    "webhook_url": "https://tuapp.com/webhooks/adiecoin"
   }'`}</Code>
         <p>Respuesta <code>201</code>:</p>
         <Code>{`{
@@ -90,7 +90,7 @@ export default function DocsPage() {
     "status": "pending",
     "expires_at": "2026-01-01T12:30:00.000Z"
   },
-  "checkout_url": "https://contenline.app/checkout/f47ac10b-..."
+  "checkout_url": "https://adiecoin.app/checkout/f47ac10b-..."
 }`}</Code>
         <p>
           <code>webhook_url</code> es opcional pero recomendado: debe ser HTTPS hacia
@@ -109,16 +109,16 @@ export default function DocsPage() {
 
       <Section id="webhooks" title="Webhooks">
         <p>
-          Cuando una sesión con <code>webhook_url</code> se completa, Contenline
+          Cuando una sesión con <code>webhook_url</code> se completa, AdieCoin
           envía un <code>POST</code> firmado a tu endpoint. Tu servidor debe
           responder <strong>2xx en menos de 10&nbsp;segundos</strong>; de lo
           contrario se considera fallo y se reintenta (ver Reintentos).
         </p>
         <p>Headers de cada entrega:</p>
-        <Code>{`Contenline-Signature:   <hmac-sha256-hex del cuerpo crudo>
-Contenline-Timestamp:   <epoch en segundos del intento>
-Contenline-Delivery-Id: <único por INTENTO>
-Contenline-Event-Id:    <único por EVENTO; se repite en reintentos>`}</Code>
+        <Code>{`AdieCoin-Signature:   <hmac-sha256-hex del cuerpo crudo>
+AdieCoin-Timestamp:   <epoch en segundos del intento>
+AdieCoin-Delivery-Id: <único por INTENTO>
+AdieCoin-Event-Id:    <único por EVENTO; se repite en reintentos>`}</Code>
         <p>Estructura del payload:</p>
         <Code>{`{
   "id": "9b2e...",            // único por evento (event.id)
@@ -156,13 +156,13 @@ Contenline-Event-Id:    <único por EVENTO; se repite en reintentos>`}</Code>
 import express from 'express';
 
 const app = express();
-const SECRET = process.env.CONTENLINE_WEBHOOK_SECRET;
+const SECRET = process.env.ADIECOIN_WEBHOOK_SECRET;
 
 // Necesitamos el cuerpo CRUDO (sin parsear) para verificar la firma.
-app.post('/webhooks/contenline',
+app.post('/webhooks/adiecoin',
   express.raw({ type: 'application/json' }),
   (req, res) => {
-    const signature = req.header('Contenline-Signature') ?? '';
+    const signature = req.header('AdieCoin-Signature') ?? '';
     const expected = crypto
       .createHmac('sha256', SECRET)
       .update(req.body)            // Buffer crudo
@@ -192,9 +192,9 @@ intento 4  → +30 min
 intento 5  → +2 h
 (tope superior del backoff: 12 h)`}</Code>
         <p>
-          <strong>Idempotencia:</strong> <code>Contenline-Delivery-Id</code> es único
+          <strong>Idempotencia:</strong> <code>AdieCoin-Delivery-Id</code> es único
           por intento, mientras que <code>event.id</code> (y
-          <code> Contenline-Event-Id</code>) es único por evento y se repite en los
+          <code> AdieCoin-Event-Id</code>) es único por evento y se repite en los
           reintentos. Deduplica por <code>event.id</code> para no procesar dos veces
           el mismo pago.
         </p>

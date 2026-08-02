@@ -1,6 +1,6 @@
 import { LegalShell } from '../legal';
 
-export const metadata = { title: 'Aviso de privacidad — Contenline' };
+export const metadata = { title: 'Aviso de privacidad — AdieCoin' };
 
 export default function PrivacyPage() {
   return (
@@ -8,7 +8,7 @@ export default function PrivacyPage() {
       <section>
         <h2 className="text-lg font-semibold text-white">1. Responsable</h2>
         <p>
-          Contenline (“la plataforma”) trata datos personales conforme al RGPD (UE) y a la
+          AdieCoin (“la plataforma”) trata datos personales conforme al RGPD (UE) y a la
           Ley Federal de Protección de Datos Personales en Posesión de los Particulares
           (México).
         </p>
@@ -48,7 +48,7 @@ export default function PrivacyPage() {
       </section>
       <section>
         <h2 className="text-lg font-semibold text-white">6. Contacto</h2>
-        <p>Para ejercer tus derechos, escribe a privacidad@contenline.example.</p>
+        <p>Para ejercer tus derechos, escribe a privacidad@adiecoin.example.</p>
       </section>
     </LegalShell>
   );

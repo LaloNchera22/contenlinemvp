@@ -23,21 +23,21 @@ export default function Landing({ locale }: { locale: Locale }) {
       {
         '@type': 'Organization',
         '@id': new URL('/#organization', base).toString(),
-        name: 'Contenline',
+        name: 'AdieCoin',
         url: base.toString(),
         description: dict.meta.description,
       },
       {
         '@type': 'WebSite',
         '@id': new URL('/#website', base).toString(),
-        name: 'Contenline',
+        name: 'AdieCoin',
         url: base.toString(),
         inLanguage: locales.map((l) => l),
         publisher: { '@id': new URL('/#organization', base).toString() },
       },
       {
         '@type': 'SoftwareApplication',
-        name: 'Contenline',
+        name: 'AdieCoin',
         applicationCategory: 'FinanceApplication',
         operatingSystem: 'Web',
         url: new URL(localePath(locale), base).toString(),
@@ -60,7 +60,7 @@ export default function Landing({ locale }: { locale: Locale }) {
           <div className="flex items-center gap-8">
             <Link href={localePath(locale)} className="flex items-center gap-2 text-lg font-bold">
               <LogoMark />
-              Conten<span className="text-brand">line</span>
+              Adie<span className="text-brand">Coin</span>
             </Link>
             <nav className="hidden items-center gap-5 text-sm text-white/60 sm:flex">
               <Link href="/docs" className="hover:text-white">

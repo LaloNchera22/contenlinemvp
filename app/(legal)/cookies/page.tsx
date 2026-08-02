@@ -1,6 +1,6 @@
 import { LegalShell } from '../legal';
 
-export const metadata = { title: 'Política de cookies — Contenline' };
+export const metadata = { title: 'Política de cookies — AdieCoin' };
 
 export default function CookiesPage() {
   return (
@@ -8,15 +8,15 @@ export default function CookiesPage() {
       <section>
         <h2 className="text-lg font-semibold text-white">1. Qué usamos</h2>
         <p>
-          Contenline utiliza únicamente almacenamiento <strong>estrictamente necesario</strong>{' '}
+          AdieCoin utiliza únicamente almacenamiento <strong>estrictamente necesario</strong>{' '}
           para funcionar:
         </p>
         <ul className="list-disc pl-5 space-y-1 mt-2">
           <li>
-            <code>contenline-session</code>: cookie httpOnly con tu sesión autenticada (SIWE).
+            <code>adiecoin-session</code>: cookie httpOnly con tu sesión autenticada (SIWE).
           </li>
           <li>
-            <code>contenline-auth</code> / <code>contenline-age-confirmed</code>: almacenamiento
+            <code>adiecoin-auth</code> / <code>adiecoin-age-confirmed</code>: almacenamiento
             local del navegador para la sesión del cliente y la confirmación de edad.
           </li>
         </ul>

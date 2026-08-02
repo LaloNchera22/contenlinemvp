@@ -1,5 +1,5 @@
 -- =============================================================
--- Buckets de Storage para Contenline
+-- Buckets de Storage para AdieCoin
 -- =============================================================
 
 -- public-content: avatares, thumbnails, contenido público

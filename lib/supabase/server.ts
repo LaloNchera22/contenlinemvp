@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 
-export const SESSION_COOKIE = 'contenline-session';
+export const SESSION_COOKIE = 'adiecoin-session';
 
 /**
  * Cliente para usar en API routes / server components con el JWT del usuario.

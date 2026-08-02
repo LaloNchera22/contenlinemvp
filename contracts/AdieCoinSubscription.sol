@@ -7,11 +7,11 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
- * @title ContenlineSubscription
+ * @title AdieCoinSubscription
  * @notice Suscripciones en USDC. Cobra fee (default 10%) y transfiere el neto al creador.
  *         El estado onchain es la fuente de verdad que Supabase espejea.
  */
-contract ContenlineSubscription is ReentrancyGuard, Ownable {
+contract AdieCoinSubscription is ReentrancyGuard, Ownable {
     using SafeERC20 for IERC20;
 
     IERC20 public immutable usdc;

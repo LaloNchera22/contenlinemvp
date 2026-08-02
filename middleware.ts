@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const SESSION_COOKIE = 'contenline-session';
+const SESSION_COOKIE = 'adiecoin-session';
 
 /**
  * Middleware que cumple dos funciones:

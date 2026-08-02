@@ -32,7 +32,7 @@ export default function DashboardHome() {
   return (
     <div>
       <h1 className="text-2xl font-bold">Resumen del mes</h1>
-      <p className="text-white/60 text-sm mt-1">Métricas de tu actividad en Contenline.</p>
+      <p className="text-white/60 text-sm mt-1">Métricas de tu actividad en AdieCoin.</p>
 
       {error && <p className="mt-6 text-sm text-amber-400" role="alert">{error}</p>}
 

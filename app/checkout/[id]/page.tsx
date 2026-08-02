@@ -39,7 +39,7 @@ export default async function CheckoutPage({ params }: { params: { id: string } 
   return (
     <main className="min-h-screen flex items-center justify-center px-6 py-16">
       <div className="card w-full max-w-md">
-        <p className="text-xs uppercase tracking-wide text-white/60">Pago seguro · Contenline</p>
+        <p className="text-xs uppercase tracking-wide text-white/60">Pago seguro · AdieCoin</p>
         <h1 className="mt-2 text-2xl font-bold">
           ${Number(session.amount_usdc).toFixed(2)} <span className="text-base font-normal text-white/60">USDC</span>
         </h1>
@@ -64,7 +64,7 @@ export default async function CheckoutPage({ params }: { params: { id: string } 
         )}
 
         <p className="mt-6 text-[11px] leading-relaxed text-white/50">
-          Contenline es un protocolo non-custodial: el pago se ejecuta directamente
+          AdieCoin es un protocolo non-custodial: el pago se ejecuta directamente
           entre tu wallet y la del creador. La plataforma no custodia fondos.
         </p>
       </div>

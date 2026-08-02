@@ -13,7 +13,7 @@ import { useEffect, useState } from 'react';
  */
 export default function AgeGate({ username }: { username: string }) {
   const [confirmed, setConfirmed] = useState(true); // evita flash en SSR
-  const storageKey = 'contenline-age-confirmed';
+  const storageKey = 'adiecoin-age-confirmed';
 
   useEffect(() => {
     setConfirmed(localStorage.getItem(storageKey) === 'true');

@@ -13,15 +13,15 @@ async function main() {
     '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174';
   const feeRecipient = process.env.FEE_RECIPIENT ?? deployer.address;
 
-  const Subscription = await ethers.getContractFactory('ContenlineSubscription');
+  const Subscription = await ethers.getContractFactory('AdieCoinSubscription');
   const subscription = await Subscription.deploy(usdc, feeRecipient);
   await subscription.waitForDeployment();
-  console.log('ContenlineSubscription:', await subscription.getAddress());
+  console.log('AdieCoinSubscription:', await subscription.getAddress());
 
-  const Payment = await ethers.getContractFactory('ContenlinePayment');
+  const Payment = await ethers.getContractFactory('AdieCoinPayment');
   const payment = await Payment.deploy(usdc, feeRecipient);
   await payment.waitForDeployment();
-  console.log('ContenlinePayment:', await payment.getAddress());
+  console.log('AdieCoinPayment:', await payment.getAddress());
 
   console.log('\nActualiza tu .env:');
   console.log(`NEXT_PUBLIC_CONTRACT_SUBSCRIPTION=${await subscription.getAddress()}`);

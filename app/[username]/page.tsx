@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { getSessionFromRequest } from '@/lib/auth';
 import { safeHttpsUrl } from '@/lib/url';
 import SubscribeButton from './SubscribeButton';
+import ChallengeButton from './ChallengeButton';
 import ContentItem from './ContentItem';
 import AgeGate from './AgeGate';
 
@@ -61,7 +62,7 @@ export async function generateMetadata({
   const title = `${user.display_name} (@${user.username})`;
   const description =
     user.bio ??
-    `Suscríbete a ${user.display_name} en Contenline y accede a su contenido exclusivo con pagos en USDC.`;
+    `Suscríbete a ${user.display_name} en AdieCoin y accede a su contenido exclusivo con pagos en USDC.`;
   const avatar = safeHttpsUrl(user.avatar_url);
 
   return {
@@ -126,6 +127,14 @@ export default async function CreatorPage({ params }: { params: { username: stri
       </div>
 
       {user.bio && <p className="mt-6 text-white/70">{user.bio}</p>}
+
+      <section className="mt-8">
+        <h2 className="text-lg font-semibold">Envíale un reto</h2>
+        <p className="mt-1 text-sm text-white/60">
+          Proponle un encargo pagado con AUSD en garantía. Se libera solo si lo acepta y entrega.
+        </p>
+        <ChallengeButton creatorUsername={user.username} />
+      </section>
 
       <h2 className="mt-12 text-lg font-semibold">Planes de suscripción</h2>
       <div className="mt-4 grid sm:grid-cols-2 gap-4">

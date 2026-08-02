@@ -27,7 +27,7 @@ export function getSupabaseBrowser(): SupabaseClient {
           // usando el access_token como refresh_token y entraría en un loop de
           // reintentos fallidos. La renovación se hace vía /api/auth/refresh.
           autoRefreshToken: false,
-          storageKey: 'contenline-auth',
+          storageKey: 'adiecoin-auth',
         },
       },
     );

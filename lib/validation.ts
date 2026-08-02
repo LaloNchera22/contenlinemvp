@@ -18,10 +18,35 @@ export const LIMITS = {
   course_description: 2000,
   service_title: 200,
   service_description: 2000,
+  challenge_title: 120,
+  challenge_description: 1000,
 } as const;
 
 /** Tope de precio compartido con el contrato/checkout: 10k USDC por ítem. */
 export const MAX_PRICE_USDC = 10000;
+
+/**
+ * Tope de stake de un reto y de un depósito, en AUSD. AUSD está pegado 1:1 a
+ * USDC, así que reutilizamos el mismo orden de magnitud que MAX_PRICE_USDC.
+ */
+export const MAX_STAKE_AUSD = 10000;
+export const MIN_STAKE_AUSD = 1;
+
+/** Valida un monto en AUSD dentro de un rango [min, max]. */
+export function validateAmount(
+  value: unknown,
+  min = MIN_STAKE_AUSD,
+  max = MAX_STAKE_AUSD,
+): number | ValidationError {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) {
+    return { error: 'amount must be greater than 0' };
+  }
+  if (n < min) return { error: `amount must be at least ${min} AUSD` };
+  if (n > max) return { error: `amount cannot exceed ${max} AUSD` };
+  // AUSD has 6 decimals; reject anything finer to keep the ledger exact.
+  return Math.round(n * 1e6) / 1e6;
+}
 
 export type ValidationError = { error: string };
 
