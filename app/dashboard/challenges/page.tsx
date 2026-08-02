@@ -19,12 +19,12 @@ interface Challenge {
 }
 
 const STATUS_STYLE: Record<string, string> = {
-  pending: 'bg-yellow-500/15 text-yellow-300',
-  accepted: 'bg-blue-500/15 text-blue-300',
-  fulfilled: 'bg-brand/15 text-brand',
-  declined: 'bg-red-500/15 text-red-300',
-  cancelled: 'bg-white/10 text-white/50',
-  expired: 'bg-white/10 text-white/50',
+  pending: 'bg-yellow-500/15 text-yellow-700',
+  accepted: 'bg-blue-500/15 text-blue-700',
+  fulfilled: 'bg-brand/10 text-brand-dim',
+  declined: 'bg-red-500/15 text-red-700',
+  cancelled: 'bg-ink/5 text-ink/50',
+  expired: 'bg-ink/5 text-ink/50',
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -38,7 +38,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 function Badge({ status }: { status: string }) {
   return (
-    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLE[status] ?? 'bg-white/10'}`}>
+    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLE[status] ?? 'bg-ink/5'}`}>
       {STATUS_LABEL[status] ?? status}
     </span>
   );
@@ -82,21 +82,21 @@ export default function ChallengesPage() {
     setBusyId(null);
   }
 
-  if (loading) return <p className="text-sm text-white/50">Cargando…</p>;
+  if (loading) return <p className="text-sm text-ink/50">Cargando…</p>;
 
   return (
     <div className="max-w-3xl">
       <h1 className="text-2xl font-bold">Retos</h1>
-      <p className="mt-1 text-sm text-white/60">
+      <p className="mt-1 text-sm text-ink/60">
         Los fans te envían retos pagados con AUSD en garantía. Acepta y entrega para cobrar (menos {incoming[0]?.fee_percent ?? 5}% de comisión), o rechaza para reembolsar.
       </p>
 
-      {error && <p className="mt-4 text-sm text-red-400" role="alert">{error}</p>}
+      {error && <p className="mt-4 text-sm text-red-600" role="alert">{error}</p>}
 
       <section className="mt-6">
         <h2 className="font-semibold">Recibidos</h2>
         {incoming.length === 0 ? (
-          <p className="mt-3 text-sm text-white/50">Aún no has recibido retos.</p>
+          <p className="mt-3 text-sm text-ink/50">Aún no has recibido retos.</p>
         ) : (
           <ul className="mt-3 space-y-3">
             {incoming.map((c) => (
@@ -107,9 +107,9 @@ export default function ChallengesPage() {
                       <h3 className="font-medium">{c.title}</h3>
                       <Badge status={c.status} />
                     </div>
-                    {c.description && <p className="mt-1 text-sm text-white/60">{c.description}</p>}
-                    <p className="mt-2 text-xs text-white/50">
-                      De <span className="text-white/70">@{c.from_user?.username ?? '—'}</span> ·{' '}
+                    {c.description && <p className="mt-1 text-sm text-ink/60">{c.description}</p>}
+                    <p className="mt-2 text-xs text-ink/50">
+                      De <span className="text-ink/70">@{c.from_user?.username ?? '—'}</span> ·{' '}
                       <span className="font-mono text-brand">{c.stake_ausd} AUSD</span>
                     </p>
                   </div>
@@ -145,7 +145,7 @@ export default function ChallengesPage() {
       <section className="mt-8">
         <h2 className="font-semibold">Enviados</h2>
         {outgoing.length === 0 ? (
-          <p className="mt-3 text-sm text-white/50">No has enviado retos.</p>
+          <p className="mt-3 text-sm text-ink/50">No has enviado retos.</p>
         ) : (
           <ul className="mt-3 space-y-3">
             {outgoing.map((c) => (
@@ -156,9 +156,9 @@ export default function ChallengesPage() {
                       <h3 className="font-medium">{c.title}</h3>
                       <Badge status={c.status} />
                     </div>
-                    {c.description && <p className="mt-1 text-sm text-white/60">{c.description}</p>}
-                    <p className="mt-2 text-xs text-white/50">
-                      Para <span className="text-white/70">@{c.creator?.username ?? '—'}</span> ·{' '}
+                    {c.description && <p className="mt-1 text-sm text-ink/60">{c.description}</p>}
+                    <p className="mt-2 text-xs text-ink/50">
+                      Para <span className="text-ink/70">@{c.creator?.username ?? '—'}</span> ·{' '}
                       <span className="font-mono text-brand">{c.stake_ausd} AUSD</span>
                     </p>
                   </div>

@@ -20,7 +20,7 @@ export default function EmptyState({
         {icon}
       </div>
       <p className="mt-3 font-medium">{title}</p>
-      {description && <p className="mt-1 text-sm text-white/60">{description}</p>}
+      {description && <p className="mt-1 text-sm text-ink/60">{description}</p>}
       {action && <div className="mt-4 flex justify-center">{action}</div>}
     </div>
   );

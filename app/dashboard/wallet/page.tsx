@@ -107,7 +107,7 @@ export default function WalletPage() {
   return (
     <div className="max-w-3xl">
       <h1 className="text-2xl font-bold">Wallet</h1>
-      <p className="mt-1 text-sm text-white/60">
+      <p className="mt-1 text-sm text-ink/60">
         Tu saldo interno en AUSD. Recarga con USDC en Polygon (1:1) y úsalo para suscripciones y retos.
       </p>
 
@@ -146,18 +146,18 @@ export default function WalletPage() {
             </button>
           </div>
         )}
-        {status && <p className="mt-3 text-xs text-white/70" role="status" aria-live="polite">{status}</p>}
-        {error && <p className="mt-3 text-xs text-red-400" role="alert">{error}</p>}
+        {status && <p className="mt-3 text-xs text-ink/70" role="status" aria-live="polite">{status}</p>}
+        {error && <p className="mt-3 text-xs text-red-600" role="alert">{error}</p>}
       </section>
 
       <section className="mt-6">
         <h2 className="font-semibold">Movimientos</h2>
         {ledger.length === 0 ? (
-          <p className="mt-3 text-sm text-white/50">Aún no hay movimientos.</p>
+          <p className="mt-3 text-sm text-ink/50">Aún no hay movimientos.</p>
         ) : (
           <div className="mt-3 overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-left text-xs uppercase tracking-wide text-white/40">
+              <thead className="text-left text-xs uppercase tracking-wide text-ink/40">
                 <tr>
                   <th className="py-2 pr-4">Tipo</th>
                   <th className="py-2 pr-4">Detalle</th>
@@ -170,14 +170,14 @@ export default function WalletPage() {
                 {ledger.map((e) => (
                   <tr key={e.id} className="border-t border-surface-border">
                     <td className="py-2 pr-4">{ENTRY_LABEL[e.entry_type] ?? e.entry_type}</td>
-                    <td className="py-2 pr-4 text-white/60">{e.description ?? '—'}</td>
-                    <td className={`py-2 pr-4 text-right font-mono ${Number(e.amount_ausd) >= 0 ? 'text-brand' : 'text-red-400'}`}>
+                    <td className="py-2 pr-4 text-ink/60">{e.description ?? '—'}</td>
+                    <td className={`py-2 pr-4 text-right font-mono ${Number(e.amount_ausd) >= 0 ? 'text-brand' : 'text-red-600'}`}>
                       {fmt(Number(e.amount_ausd))}
                     </td>
-                    <td className="py-2 pr-4 text-right font-mono text-white/70">
+                    <td className="py-2 pr-4 text-right font-mono text-ink/70">
                       {Number(e.balance_after).toFixed(2)}
                     </td>
-                    <td className="py-2 text-right text-white/50">
+                    <td className="py-2 text-right text-ink/50">
                       {new Date(e.created_at).toLocaleDateString()}
                     </td>
                   </tr>

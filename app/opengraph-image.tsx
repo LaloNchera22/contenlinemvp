@@ -20,26 +20,21 @@ export default function OgImage() {
           flexDirection: 'column',
           justifyContent: 'center',
           padding: 96,
-          backgroundColor: '#121212',
+          backgroundColor: '#ffffff',
           backgroundImage:
-            'radial-gradient(ellipse at top right, rgba(62,207,142,0.18), transparent 60%)',
-          color: '#EDEDED',
+            'radial-gradient(ellipse at top right, rgba(245,38,28,0.14), transparent 60%)',
+          color: '#18181B',
           fontSize: 32,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 44, fontWeight: 700 }}>
-          <svg width="44" height="44" viewBox="0 0 24 24" fill="none">
-            <path d="M13 2 3 14h7l-1 8 12-14h-8l0-6z" fill="#3ECF8E" />
-          </svg>
-          <span>
-            Conten<span style={{ color: '#3ECF8E' }}>line</span>
-          </span>
+        <div style={{ display: 'flex', alignItems: 'baseline', fontSize: 88, fontWeight: 800, letterSpacing: -2, color: '#F5261C' }}>
+          adie<span>.</span>
         </div>
-        <div style={{ marginTop: 56, fontSize: 76, fontWeight: 700, lineHeight: 1.1, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ marginTop: 48, fontSize: 76, fontWeight: 700, lineHeight: 1.1, display: 'flex', flexDirection: 'column' }}>
           <span>Monetiza tu contenido</span>
-          <span style={{ color: '#3ECF8E' }}>sin intermediarios</span>
+          <span style={{ color: '#F5261C' }}>sin intermediarios</span>
         </div>
-        <div style={{ marginTop: 40, fontSize: 30, color: 'rgba(237,237,237,0.6)', maxWidth: 900 }}>
+        <div style={{ marginTop: 40, fontSize: 30, color: 'rgba(24,24,27,0.6)', maxWidth: 900 }}>
           Suscripciones, cursos y servicios con pagos en USDC sobre Polygon · API para developers
         </div>
       </div>

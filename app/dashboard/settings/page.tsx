@@ -51,7 +51,7 @@ export default function SettingsPage() {
 
       <div className="card mt-6">
         <h2 className="font-semibold">Sesión</h2>
-        <p className="text-sm text-white/60 mt-1">
+        <p className="text-sm text-ink/60 mt-1">
           Cierra la sesión en este dispositivo. Tu wallet seguirá siendo tuya.
         </p>
         <button onClick={() => setConfirmLogout(true)} className="btn-ghost mt-3">
@@ -62,12 +62,12 @@ export default function SettingsPage() {
       <EmailNotificationsSection />
 
       <div className="card mt-6 border-red-500/30">
-        <h2 className="font-semibold text-red-400">Eliminar mi cuenta</h2>
-        <p className="text-sm text-white/70 mt-2">
+        <h2 className="font-semibold text-red-600">Eliminar mi cuenta</h2>
+        <p className="text-sm text-ink/70 mt-2">
           Anonimizamos tus datos personales (nombre, bio, avatar) y liberamos tu
           nombre de usuario. Tus API keys se desactivan de inmediato.
         </p>
-        <p className="text-sm text-white/60 mt-2">
+        <p className="text-sm text-ink/60 mt-2">
           <strong>Qué permanece:</strong> las transacciones registradas onchain son
           inmutables y se conservan por obligaciones contables/fiscales; tu wallet es
           un identificador pseudónimo ya público en la blockchain.
@@ -76,7 +76,7 @@ export default function SettingsPage() {
           className="btn bg-red-600 hover:bg-red-700 text-white mt-4">
           {busy ? 'Procesando…' : 'Eliminar mi cuenta'}
         </button>
-        {error && <p className="text-sm text-red-400 mt-3" role="alert">{error}</p>}
+        {error && <p className="text-sm text-red-600 mt-3" role="alert">{error}</p>}
       </div>
 
       <ConfirmDialog

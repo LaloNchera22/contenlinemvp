@@ -122,15 +122,15 @@ export default async function CreatorPage({ params }: { params: { username: stri
         </div>
         <div>
           <h1 className="text-2xl font-bold">{user.display_name}</h1>
-          <p className="text-white/50">@{user.username}</p>
+          <p className="text-ink/50">@{user.username}</p>
         </div>
       </div>
 
-      {user.bio && <p className="mt-6 text-white/70">{user.bio}</p>}
+      {user.bio && <p className="mt-6 text-ink/70">{user.bio}</p>}
 
       <section className="mt-8">
         <h2 className="text-lg font-semibold">Envíale un reto</h2>
-        <p className="mt-1 text-sm text-white/60">
+        <p className="mt-1 text-sm text-ink/60">
           Proponle un encargo pagado con AUSD en garantía. Se libera solo si lo acepta y entrega.
         </p>
         <ChallengeButton creatorUsername={user.username} />
@@ -139,15 +139,15 @@ export default async function CreatorPage({ params }: { params: { username: stri
       <h2 className="mt-12 text-lg font-semibold">Planes de suscripción</h2>
       <div className="mt-4 grid sm:grid-cols-2 gap-4">
         {plans.length === 0 && (
-          <p className="text-sm text-white/60">Este creador aún no publicó planes.</p>
+          <p className="text-sm text-ink/60">Este creador aún no publicó planes.</p>
         )}
         {plans.map((p) => (
           <div key={p.id} className="card">
             <p className="font-semibold text-brand-light">{p.name}</p>
-            {p.description && <p className="text-sm text-white/60 mt-1">{p.description}</p>}
+            {p.description && <p className="text-sm text-ink/60 mt-1">{p.description}</p>}
             <p className="mt-3 text-2xl font-bold">
               ${Number(p.price_usdc).toFixed(2)}{' '}
-              <span className="text-sm font-normal text-white/60">
+              <span className="text-sm font-normal text-ink/60">
                 USDC / {p.interval === 'monthly' ? 'mes' : 'año'}
               </span>
             </p>
@@ -159,7 +159,7 @@ export default async function CreatorPage({ params }: { params: { username: stri
               />
             ) : (
               <p
-                className="mt-4 text-xs text-white/60"
+                className="mt-4 text-xs text-ink/60"
                 title="El creador aún está registrando este plan onchain. Vuelve en unos minutos para suscribirte."
               >
                 Plan no disponible para suscripción onchain todavía.
@@ -172,7 +172,7 @@ export default async function CreatorPage({ params }: { params: { username: stri
       <h2 className="mt-12 text-lg font-semibold">Contenido reciente</h2>
       <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
         {content.length === 0 && (
-          <p className="text-sm text-white/60">Este creador aún no publicó contenido.</p>
+          <p className="text-sm text-ink/60">Este creador aún no publicó contenido.</p>
         )}
         {content.map((c) => {
           // Exclusivo + sin suscripción activa: thumbnail blureado con candado.
@@ -187,7 +187,7 @@ export default async function CreatorPage({ params }: { params: { username: stri
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-brand/20 to-surface blur-sm" aria-hidden />
                 <span className="relative text-2xl" aria-hidden>🔒</span>
-                <span className="relative text-xs text-white/70 mt-2 px-2">Suscríbete para ver</span>
+                <span className="relative text-xs text-ink/70 mt-2 px-2">Suscríbete para ver</span>
               </div>
             );
           }

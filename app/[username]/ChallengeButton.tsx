@@ -82,7 +82,7 @@ export default function ChallengeButton({ creatorUsername }: { creatorUsername: 
   return (
     <div className="card mt-4 p-5">
       <p className="font-semibold">Enviar un reto a @{creatorUsername}</p>
-      <p className="mt-1 text-xs text-white/60">
+      <p className="mt-1 text-xs text-ink/60">
         Financias el reto con AUSD de tu saldo. Se libera al creador solo si acepta y entrega; si lo rechaza, se te reembolsa.
       </p>
       <div className="mt-4 space-y-3">
@@ -106,7 +106,7 @@ export default function ChallengeButton({ creatorUsername }: { creatorUsername: 
             Cancelar
           </button>
         </div>
-        {error && <p className="text-xs text-red-400" role="alert">{error}</p>}
+        {error && <p className="text-xs text-red-600" role="alert">{error}</p>}
       </div>
     </div>
   );

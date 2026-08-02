@@ -90,7 +90,7 @@ export default function CoursesPage() {
   return (
     <div className="max-w-3xl">
       <h1 className="text-2xl font-bold">Cursos</h1>
-      <p className="text-white/60 text-sm mt-1">
+      <p className="text-ink/60 text-sm mt-1">
         Crea cursos y publícalos cuando estén listos para venderse.
       </p>
 
@@ -119,16 +119,16 @@ export default function CoursesPage() {
           </button>
           {editingId && <button onClick={resetForm} disabled={busy} className="btn-ghost">Cancelar</button>}
         </div>
-        {error && <p className="text-sm text-red-400" role="alert">{error}</p>}
+        {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
       </div>
 
       <div className="mt-6 space-y-2">
         {loading ? (
-          <p className="text-sm text-white/60">Cargando cursos…</p>
+          <p className="text-sm text-ink/60">Cargando cursos…</p>
         ) : courses.length === 0 ? (
           <div className="card text-center py-10">
             <p className="font-medium">Aún no tienes cursos</p>
-            <p className="text-sm text-white/60 mt-1">Crea tu primer curso y publícalo cuando esté listo.</p>
+            <p className="text-sm text-ink/60 mt-1">Crea tu primer curso y publícalo cuando esté listo.</p>
           </div>
         ) : (
           courses.map((c) => (
@@ -136,12 +136,12 @@ export default function CoursesPage() {
               <div>
                 <p className="font-medium">
                   {c.title}{' '}
-                  <span className="text-xs text-white/60">(${Number(c.price_usdc).toFixed(2)} USDC)</span>
+                  <span className="text-xs text-ink/60">(${Number(c.price_usdc).toFixed(2)} USDC)</span>
                 </p>
                 <p className="text-xs mt-1">
                   {c.published
-                    ? <span className="text-emerald-400">● Publicado</span>
-                    : <span className="text-white/40">borrador</span>}
+                    ? <span className="text-emerald-600">● Publicado</span>
+                    : <span className="text-ink/40">borrador</span>}
                 </p>
               </div>
               <div className="flex gap-2 shrink-0">
@@ -149,7 +149,7 @@ export default function CoursesPage() {
                   {c.published ? 'Despublicar' : 'Publicar'}
                 </button>
                 <button onClick={() => startEdit(c)} disabled={busy} className="btn-ghost">Editar</button>
-                <button onClick={() => setToDelete(c)} disabled={busy} className="btn-ghost text-red-400">
+                <button onClick={() => setToDelete(c)} disabled={busy} className="btn-ghost text-red-600">
                   Eliminar
                 </button>
               </div>
