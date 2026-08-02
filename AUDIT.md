@@ -2,6 +2,18 @@
 
 Estado de los hallazgos de la auditoría exhaustiva (commit base `96fdf19`).
 
+> **8ª ronda — validez como producto financiero internacional.**
+> Cierre de los tres huecos que impedían operar como plataforma de dinero:
+> (1) **off-ramp de retiro** AUSD→USDC (débito atómico + solicitud liquidada por
+> tesorería), que faltaba por completo — los depósitos no tenían salida;
+> (2) **ledger a doble entrada real** con cuentas de sistema `platform`/`escrow`,
+> de modo que todo movimiento neta a cero y los fees dejan de "evaporarse";
+> (3) **capa de compliance** (KYC/AML): estado KYC por usuario con auditoría,
+> screening de sanciones (blocklist OFAC), gating del retiro por umbral y
+> geobloqueo. Además se **corrigió la afirmación falsa "non-custodial"**: el saldo
+> AUSD es custodiado y ahora los términos, checkout y marketing lo reflejan con
+> honestidad. Ver tabla "8ª ronda" al final.
+
 > **7ª ronda — auditoría UI/UX + SEO internacional.**
 > Rediseño del sistema visual (paleta y componentes estilo Supabase: acento
 > verde sobre grises neutros, landing de dos columnas con cards de producto) y
@@ -212,3 +224,41 @@ hreflang/canonical/OG en `/` y `/en`, `robots.txt`, `sitemap.xml`,
 - El dashboard sigue solo en español (privado, sin impacto SEO); extender los diccionarios si se quiere UI multilenguaje completa.
 - Añadir favicon/íconos PWA reales (el manifest declara `icons: []`).
 - Al usar dominio definitivo, dar de alta la propiedad en Google Search Console y enviar el sitemap.
+
+---
+
+## 8ª ronda — validez como producto financiero internacional
+
+Auditoría enfocada en lo que bloqueaba ser "una plataforma totalmente válida como
+startup internacional" (más allá del MVP técnico). Estado verificado al iniciar:
+`typecheck` ✅, `test` ✅ (19), `build` ✅, `npm audit --production` = 15 (4 high).
+
+### 🔴 Bloqueadores existenciales resueltos
+
+| Hallazgo | Severidad | Estado | Detalle |
+|----------|-----------|--------|---------|
+| **No existía forma de retirar fondos.** El flujo `deposit` estaba completo pero no había `ausd_withdraw`, ni endpoint, ni UI: `withdrawal` solo existía como enum del ledger y etiqueta. Los depósitos eran un pozo sin salida (indistinguible de una trampa de fondos para usuario/regulador). | Crítica | ✅ Resuelto | `supabase/ledger.sql`: tabla `withdrawals` + `ausd_withdraw` (débito atómico advisory-locked) + `withdrawal_mark_sent`/`withdrawal_mark_failed` para la liquidación de tesorería. `POST /api/wallet/withdraw` (auth + rate limit + screening + gate KYC). UI de retiro en `/dashboard/wallet`. La liquidación USDC on-chain queda como paso operativo del signer de tesorería (documentado). |
+| **Afirmación "non-custodial" falsa.** Términos, checkout, README, layout e i18n afirmaban que la plataforma "no custodia fondos", pero el saldo AUSD (USDC en tesorería + ledger off-chain) **sí es custodial**. Declararlo non-custodial es una tergiversación con riesgo legal. | Alta | ✅ Resuelto | Reescritura de `app/(legal)/terms/page.tsx` distinguiendo el pago directo onchain (non-custodial) del saldo AUSD (custodiado), sección de estado regulatorio (MiCA/EMI/money-transmitter → validar con abogado) y de KYC/AML/sanciones. Ajuste de checkout, README, `layout.tsx` e `lib/i18n.ts` (es/en/pt). |
+| **Ledger no cuadraba a doble entrada.** En `challenge_act` (fulfill) el fee se descontaba pero no se registraba en ninguna cuenta: `SUM(amount_ausd)` del libro no daba 0. | Media | ✅ Resuelto | Cuentas de sistema `platform`/`escrow` (UUIDs fijos, ocultas por RLS). `challenge_open`/`challenge_act` ahora mueven el stake a escrow y lo liberan como creador-neto + fee-plataforma; cada operación neta a cero. |
+
+### 🟠 Compliance (integración KYC/AML)
+
+| Item | Estado | Detalle |
+|------|--------|---------|
+| Estado KYC por usuario con auditoría inmutable | ✅ Añadido | `supabase/compliance.sql`: `users.kyc_status/kyc_country/kyc_provider_ref`, tabla append-only `kyc_reviews`, función `set_kyc_status` (para el webhook del proveedor). |
+| Screening de sanciones | ✅ Punto de integración | Tabla `blocked_addresses` (semilla OFAC SDN/vendor) + `isBlockedAddress` (fail-closed) en el retiro. |
+| Gating del off-ramp | ✅ Añadido | `lib/compliance.ts` `canWithdraw`: umbral configurable (`KYC_REQUIRED_ABOVE_AUSD`, por defecto 0 = KYC obligatorio) + geobloqueo (`RESTRICTED_COUNTRIES`). Tests en `test/lib.test.ts` (23 en total). |
+
+### Fuera del alcance de código (requiere acción de negocio/legal)
+
+Lo que **no** puede resolver el código por sí solo, imprescindible para ser válida internacionalmente:
+
+- **Licencias regulatorias** (EMI/MiCA en UE, money-transmitter/GENIUS Act en EE. UU.): requieren abogados y trámite ante reguladores.
+- **Proveedor KYC/AML real** (Persona/Sumsub/Onfido): contratar, conectar su webhook a `set_kyc_status` y alimentar `blocked_addresses` con un feed de sanciones. La capa de integración ya está lista.
+- **Signer/relayer de tesorería** para liquidar el USDC de los retiros (`withdrawal_mark_sent`).
+- **Reserva 1:1 auditada** de la stablecoin AUSD (attestations) si se comercializa como stablecoin.
+
+### Deuda técnica pendiente (arrastrada)
+
+- Upgrade a Next 15/16 para cerrar los 4 advisories *high* de producción (`next`, `axios`, `lodash`, `postcss`); es breaking (APIs async de `cookies()`/`headers()`).
+- Verificación de identidad de creadores adultos (2257/DSA), i18n del dashboard, observabilidad (Sentry), iconos PWA.

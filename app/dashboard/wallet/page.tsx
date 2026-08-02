@@ -29,7 +29,7 @@ const fmt = (n: number) =>
   `${n >= 0 ? '+' : ''}${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 })}`;
 
 export default function WalletPage() {
-  const { isConnected } = useAccount();
+  const { address, isConnected } = useAccount();
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();
 
@@ -39,6 +39,12 @@ export default function WalletPage() {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // --- retiro (off-ramp AUSD → USDC) ---
+  const [wAmount, setWAmount] = useState('');
+  const [wBusy, setWBusy] = useState(false);
+  const [wStatus, setWStatus] = useState<string | null>(null);
+  const [wError, setWError] = useState<string | null>(null);
 
   async function load() {
     const r = await fetch('/api/wallet');
@@ -104,6 +110,46 @@ export default function WalletPage() {
     }
   }
 
+  async function withdraw() {
+    setWError(null);
+    setWStatus(null);
+    const ausd = Number(wAmount);
+    if (!Number.isFinite(ausd) || ausd <= 0) {
+      setWError('Ingresa un monto válido.');
+      return;
+    }
+    if (!address) {
+      setWError('Conecta tu wallet: el USDC se enviará a esa dirección.');
+      return;
+    }
+    if (balance !== null && ausd > balance) {
+      setWError('El monto supera tu saldo disponible.');
+      return;
+    }
+    setWBusy(true);
+    try {
+      const res = await fetch('/api/wallet/withdraw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ toAddress: address, amount: ausd }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setWError(data.error ?? 'No se pudo procesar el retiro.');
+        return;
+      }
+      setWStatus(
+        `Retiro registrado: -${ausd.toFixed(2)} AUSD. El USDC llegará a tu wallet una vez procesado por la tesorería.`,
+      );
+      setWAmount('');
+      await load();
+    } catch (e) {
+      setWError(e instanceof Error ? e.message : 'Error al solicitar el retiro');
+    } finally {
+      setWBusy(false);
+    }
+  }
+
   return (
     <div className="max-w-3xl">
       <h1 className="text-2xl font-bold">Wallet</h1>
@@ -148,6 +194,40 @@ export default function WalletPage() {
         )}
         {status && <p className="mt-3 text-xs text-ink/70" role="status" aria-live="polite">{status}</p>}
         {error && <p className="mt-3 text-xs text-red-600" role="alert">{error}</p>}
+      </section>
+
+      <section className="card mt-4 p-6">
+        <h2 className="font-semibold">Retirar AUSD → USDC</h2>
+        <p className="mt-1 text-xs text-ink/60">
+          Se envía USDC (1:1) a tu wallet conectada. El saldo se descuenta al instante; la
+          tesorería liquida la transferencia onchain. Retiros por encima del umbral requieren
+          verificación de identidad (KYC).
+        </p>
+        {!isConnected ? (
+          <div className="mt-4">
+            <ConnectButton label="Conecta tu wallet" />
+          </div>
+        ) : (
+          <div className="mt-4 flex flex-wrap items-end gap-3">
+            <div>
+              <label className="label" htmlFor="wd-amount">Monto (AUSD)</label>
+              <input
+                id="wd-amount"
+                className="input w-40"
+                inputMode="decimal"
+                placeholder="0.00"
+                value={wAmount}
+                onChange={(e) => setWAmount(e.target.value)}
+                disabled={wBusy}
+              />
+            </div>
+            <button onClick={withdraw} disabled={wBusy} className="btn-primary">
+              {wBusy ? 'Procesando…' : 'Retirar'}
+            </button>
+          </div>
+        )}
+        {wStatus && <p className="mt-3 text-xs text-ink/70" role="status" aria-live="polite">{wStatus}</p>}
+        {wError && <p className="mt-3 text-xs text-red-600" role="alert">{wError}</p>}
       </section>
 
       <section className="mt-6">

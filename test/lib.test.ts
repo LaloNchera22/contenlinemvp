@@ -5,6 +5,7 @@ import { isSafeHttpsUrl } from '../lib/url';
 import { monthlyValue, summarizeSubscribers } from '../lib/subscribers';
 import { sendEmail, notifyCreator } from '../lib/email';
 import { buildSiweMessage } from '../lib/siwe';
+import { canWithdraw } from '../lib/compliance';
 
 describe('calculateFee', () => {
   it('aplica 10% a suscripción y curso', () => {
@@ -24,6 +25,44 @@ describe('calculateFee', () => {
   it('redondea a 6 decimales (precisión USDC)', () => {
     const { feeAmount } = calculateFee(0.000001, 'onchain');
     expect(feeAmount).toBe(0);
+  });
+});
+
+describe('canWithdraw (gate KYC/AML del off-ramp)', () => {
+  const OLD = process.env.KYC_REQUIRED_ABOVE_AUSD;
+  afterEach(() => {
+    process.env.KYC_REQUIRED_ABOVE_AUSD = OLD;
+    delete process.env.RESTRICTED_COUNTRIES;
+  });
+
+  it('bloquea siempre a un usuario con KYC rechazado', () => {
+    process.env.KYC_REQUIRED_ABOVE_AUSD = '1000';
+    const r = canWithdraw('rejected', 1);
+    expect(r.allowed).toBe(false);
+    if (!r.allowed) expect(r.code).toBe('kyc_rejected');
+  });
+
+  it('con umbral 0 (por defecto) exige KYC aprobado para cualquier retiro', () => {
+    process.env.KYC_REQUIRED_ABOVE_AUSD = '0';
+    expect(canWithdraw('unverified', 1).allowed).toBe(false);
+    expect(canWithdraw('pending', 5).allowed).toBe(false);
+    expect(canWithdraw('approved', 9999).allowed).toBe(true);
+  });
+
+  it('permite retiros por debajo del umbral sin KYC y exige KYC por encima', () => {
+    process.env.KYC_REQUIRED_ABOVE_AUSD = '100';
+    expect(canWithdraw('unverified', 100).allowed).toBe(true);
+    expect(canWithdraw('unverified', 100.01).allowed).toBe(false);
+    expect(canWithdraw('approved', 100.01).allowed).toBe(true);
+  });
+
+  it('geobloquea jurisdicciones restringidas', () => {
+    process.env.KYC_REQUIRED_ABOVE_AUSD = '1000';
+    process.env.RESTRICTED_COUNTRIES = 'KP,IR';
+    const r = canWithdraw('approved', 10, { country: 'kp' });
+    expect(r.allowed).toBe(false);
+    if (!r.allowed) expect(r.code).toBe('restricted_region');
+    expect(canWithdraw('approved', 10, { country: 'MX' }).allowed).toBe(true);
   });
 });
 

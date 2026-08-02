@@ -35,3 +35,27 @@ export async function creditDeposit(
   if (error) throw new Error(error.message);
   return Number(data);
 }
+
+export type WithdrawResult = { withdrawalId: string; balance: number };
+
+/**
+ * Requests an AUSD → USDC withdrawal. The balance is debited atomically inside
+ * ausd_withdraw (advisory-locked per user); the on-chain USDC payout from the
+ * treasury is settled out-of-band by a treasury signer. Throws
+ * 'insufficient_balance' when the user can't cover the amount.
+ */
+export async function requestWithdrawal(
+  userId: string,
+  toAddress: string,
+  amountAusd: number,
+): Promise<WithdrawResult> {
+  const admin = createAdminClient();
+  const { data, error } = await admin.rpc('ausd_withdraw', {
+    p_user: userId,
+    p_to: toAddress,
+    p_amount: amountAusd,
+  });
+  if (error) throw new Error(error.message);
+  const row = data as { withdrawal_id: string; balance: number };
+  return { withdrawalId: row.withdrawal_id, balance: Number(row.balance) };
+}

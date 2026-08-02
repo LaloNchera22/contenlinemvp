@@ -3,7 +3,7 @@
 **The stablecoin wallet for creators.** Every user gets an internal balance in
 **AUSD** — AdieCoin's unit of account, pegged 1:1 to deposited USDC. Fund it once
 on-chain and everything after that settles instantly off-chain against that
-balance, non-custodial by design.
+balance — and withdrawable back to USDC anytime.
 
 Three things a creator can do with it:
 
@@ -75,7 +75,7 @@ test/                    # tests de contratos
 ## Setup
 
 1. **Variables de entorno** — copia `.env.example` a `.env.local` y rellena.
-2. **Base de datos** — en el SQL editor de Supabase ejecuta `supabase/schema.sql`, luego `supabase/ledger.sql` (wallets + ledger + challenges) y por último `supabase/storage.sql`.
+2. **Base de datos** — en el SQL editor de Supabase ejecuta `supabase/schema.sql`, luego `supabase/ledger.sql` (wallets + ledger + retiros + challenges), `supabase/compliance.sql` (KYC/AML + screening de sanciones) y por último `supabase/storage.sql`.
 3. **Dependencias** — `npm install`.
 4. **Dev** — `npm run dev`.
 
