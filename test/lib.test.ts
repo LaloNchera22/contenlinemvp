@@ -213,7 +213,7 @@ describe('verifySupabaseJwt', () => {
 
 describe('buildSiweMessage', () => {
   it('incluye dominio, address y chain id (binding EIP-4361)', () => {
-    process.env.NEXT_PUBLIC_APP_URL = 'https://contenline.app';
+    process.env.NEXT_PUBLIC_APP_URL = 'https://adiecoin.app';
     process.env.NEXT_PUBLIC_CHAIN_ID = '137';
     const msg = buildSiweMessage({
       nonce: 'abc123',
@@ -221,7 +221,7 @@ describe('buildSiweMessage', () => {
       expiresAt: new Date('2026-01-01T00:05:00Z'),
       address: '0x1234567890AbcdEF1234567890aBcdef12345678',
     });
-    expect(msg).toContain('contenline.app quiere que inicies sesión');
+    expect(msg).toContain('adiecoin.app quiere que inicies sesión');
     expect(msg).toContain('0x1234567890AbcdEF1234567890aBcdef12345678');
     expect(msg).toContain('Nonce: abc123');
     expect(msg).toContain('Chain ID: 137');

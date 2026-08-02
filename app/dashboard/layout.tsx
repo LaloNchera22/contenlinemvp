@@ -6,6 +6,8 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 const NAV = [
   { href: '/dashboard', label: 'Resumen' },
+  { href: '/dashboard/wallet', label: 'Wallet' },
+  { href: '/dashboard/challenges', label: 'Retos' },
   { href: '/dashboard/earnings', label: 'Ingresos' },
   { href: '/dashboard/subscribers', label: 'Suscriptores' },
   { href: '/dashboard/plans', label: 'Planes' },
@@ -23,7 +25,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="flex min-h-screen">
       <aside className="w-60 shrink-0 border-r border-surface-border bg-surface-card/40 p-4 flex flex-col">
         <Link href="/" className="text-lg font-bold mb-8">
-          Conten<span className="text-brand">line</span>
+          Adie<span className="text-brand">Coin</span>
         </Link>
         <nav className="flex flex-col gap-1">
           {NAV.map((item) => {

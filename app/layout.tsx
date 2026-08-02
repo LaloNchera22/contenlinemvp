@@ -9,12 +9,12 @@ import { siteUrl } from '@/lib/seo';
 export const metadata: Metadata = {
   metadataBase: siteUrl(),
   title: {
-    default: 'Contenline — Monetización cripto para creadores',
-    template: '%s · Contenline',
+    default: 'AdieCoin — The stablecoin wallet for creators',
+    template: '%s · AdieCoin',
   },
   description:
-    'Panel de creador + infraestructura de pagos cripto en Polygon. Suscripciones, cursos, servicios y API para developers.',
-  applicationName: 'Contenline',
+    'A stablecoin balance (AUSD) for every creator. Deposit USDC once, then run recurring subscriptions, sell content and accept fan challenges — settled instantly from your internal balance, non-custodial.',
+  applicationName: 'AdieCoin',
   robots: {
     index: true,
     follow: true,
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    siteName: 'Contenline',
+    siteName: 'AdieCoin',
     type: 'website',
   },
   formatDetection: { telephone: false },

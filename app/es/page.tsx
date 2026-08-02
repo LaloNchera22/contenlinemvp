@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import Landing from '../components/landing/Landing';
 import { landingMetadata } from '@/lib/seo';
 
-export const metadata: Metadata = landingMetadata('en');
+export const metadata: Metadata = landingMetadata('es');
 
-export default function HomeEn() {
-  return <Landing locale="en" />;
+export default function HomeEs() {
+  return <Landing locale="es" />;
 }

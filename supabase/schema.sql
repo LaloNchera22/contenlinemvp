@@ -1,5 +1,5 @@
 -- =============================================================
--- Contenline — esquema completo con RLS
+-- AdieCoin — esquema completo con RLS
 -- Ejecutar en el SQL editor de Supabase.
 -- =============================================================
 

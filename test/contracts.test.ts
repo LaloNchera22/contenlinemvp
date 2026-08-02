@@ -4,7 +4,7 @@ import { ethers } from 'hardhat';
 /**
  * Tests básicos de los contratos usando un mock de USDC (ERC20 con 6 decimales).
  */
-describe('Contenline contracts', () => {
+describe('AdieCoin contracts', () => {
   async function deployMockUsdc() {
     const Mock = await ethers.getContractFactory('MockUSDC');
     const usdc = await Mock.deploy();
@@ -12,11 +12,11 @@ describe('Contenline contracts', () => {
     return usdc;
   }
 
-  it('ContenlineSubscription cobra 10% de fee y registra expiración', async () => {
+  it('AdieCoinSubscription cobra 10% de fee y registra expiración', async () => {
     const [owner, creator, subscriber, feeRecipient] = await ethers.getSigners();
     const usdc = await deployMockUsdc();
 
-    const Subscription = await ethers.getContractFactory('ContenlineSubscription');
+    const Subscription = await ethers.getContractFactory('AdieCoinSubscription');
     const sub = await Subscription.deploy(await usdc.getAddress(), feeRecipient.address);
     await sub.waitForDeployment();
 
@@ -35,11 +35,11 @@ describe('Contenline contracts', () => {
     expect(active).to.equal(true);
   });
 
-  it('ContenlineSubscription rechaza suscripción a plan inexistente/inactivo', async () => {
+  it('AdieCoinSubscription rechaza suscripción a plan inexistente/inactivo', async () => {
     const [, creator, subscriber, feeRecipient] = await ethers.getSigners();
     const usdc = await deployMockUsdc();
 
-    const Subscription = await ethers.getContractFactory('ContenlineSubscription');
+    const Subscription = await ethers.getContractFactory('AdieCoinSubscription');
     const sub = await Subscription.deploy(await usdc.getAddress(), feeRecipient.address);
     await sub.waitForDeployment();
 
@@ -52,11 +52,11 @@ describe('Contenline contracts', () => {
     ).to.be.revertedWith('plan inactive');
   });
 
-  it('ContenlinePayment previene replay del mismo sessionId', async () => {
+  it('AdieCoinPayment previene replay del mismo sessionId', async () => {
     const [, creator, payer, feeRecipient] = await ethers.getSigners();
     const usdc = await deployMockUsdc();
 
-    const Payment = await ethers.getContractFactory('ContenlinePayment');
+    const Payment = await ethers.getContractFactory('AdieCoinPayment');
     const pay = await Payment.deploy(await usdc.getAddress(), feeRecipient.address);
     await pay.waitForDeployment();
 

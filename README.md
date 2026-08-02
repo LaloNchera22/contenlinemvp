@@ -1,11 +1,43 @@
-# Contenline
+# AdieCoin
 
-Plataforma de **monetización cripto unificada para creadores**. Un solo producto con dos caras:
+**The stablecoin wallet for creators.** Every user gets an internal balance in
+**AUSD** — AdieCoin's unit of account, pegged 1:1 to deposited USDC. Fund it once
+on-chain and everything after that settles instantly off-chain against that
+balance, non-custodial by design.
 
-- **Panel de creador** (tipo OnlyFans): contenido exclusivo, suscripciones, cursos y servicios.
-- **Infraestructura de pagos cripto** (tipo Stripe): API keys para que developers integren pagos USDC en sus apps.
+Three things a creator can do with it:
 
-Pagos en **USDC sobre Polygon**. Autenticación sin contraseñas vía **SIWE** (Sign-In With Ethereum).
+- **Recurring subscriptions** — fans subscribe once and renewals are auto-charged
+  from their AUSD balance (no signing every month).
+- **Content, courses & services** — exclusive content gated by an active
+  subscription; one-off sales settled from balance.
+- **Fan challenges** — a fan authors a paid challenge/commission and sends it to a
+  creator, staking AUSD in escrow; the creator accepts and delivers to release the
+  funds (net of fee), or declines to refund the fan.
+
+There's also a **Stripe-style payments API** for developers (Bearer `sk_*`, signed
+HMAC webhooks) for embedding checkouts in their own apps.
+
+Passwordless auth via **SIWE** (Sign-In With Ethereum). The product is
+**English-first** with `/es` and `/pt` locales (hreflang + localized SEO).
+
+## Payment model — internal AUSD ledger
+
+The core is an off-chain, double-entry-style ledger (Polymarket-style balances):
+
+| Table | Purpose |
+|-------|---------|
+| `wallets` | one AUSD balance per user (never written directly by clients) |
+| `ledger_entries` | append-only, signed movements + `balance_after` snapshot |
+| `deposits` | on-chain USDC deposits that funded a balance (idempotent by `tx_hash`) |
+| `challenges` | fan-authored challenges with escrowed stake + lifecycle |
+
+On-chain is used **only as the on-ramp**: a USDC transfer to the AdieCoin treasury
+(`NEXT_PUBLIC_ADIECOIN_TREASURY`) is verified in `/api/wallet/deposit` and credited
+1:1 as AUSD. Every balance mutation goes through `SECURITY DEFINER` Postgres
+functions (`ausd_deposit`, `challenge_open`, `challenge_act`) that hold a per-user
+advisory lock, so concurrent debits can never race the balance negative. See
+`supabase/ledger.sql`.
 
 ## Stack
 
@@ -13,9 +45,9 @@ Pagos en **USDC sobre Polygon**. Autenticación sin contraseñas vía **SIWE** (
 |------|-----------|
 | Frontend | Next.js 14 (App Router) + TypeScript + Tailwind |
 | Backend | Supabase (Postgres + Auth + Storage + Edge Functions) |
+| Ledger | Postgres (advisory-locked SECURITY DEFINER functions) |
 | Web3 | Wagmi v2 + Viem + RainbowKit + SIWE |
-| Blockchain | Polygon — contratos Solidity con Hardhat |
-| Pagos | USDC en Polygon |
+| Blockchain | Polygon — USDC deposit on-ramp, Solidity contracts w/ Hardhat |
 | Email | Resend (opcional, vía REST; notificaciones transaccionales) |
 
 ## Estructura
@@ -31,7 +63,7 @@ app/                     # Next.js App Router (UI + API routes)
   dashboard/             # panel del creador (sidebar)
   [username]/            # perfil público + suscripción
 lib/                     # fees, siwe, jwt, apiKeys, supabase clients, contracts
-contracts/               # ContenlineSubscription.sol, ContenlinePayment.sol
+contracts/               # AdieCoinSubscription.sol, AdieCoinPayment.sol
 supabase/
   schema.sql             # tablas + RLS + funciones
   storage.sql            # buckets (public / exclusive / course)
@@ -43,7 +75,7 @@ test/                    # tests de contratos
 ## Setup
 
 1. **Variables de entorno** — copia `.env.example` a `.env.local` y rellena.
-2. **Base de datos** — en el SQL editor de Supabase ejecuta `supabase/schema.sql` y luego `supabase/storage.sql`.
+2. **Base de datos** — en el SQL editor de Supabase ejecuta `supabase/schema.sql`, luego `supabase/ledger.sql` (wallets + ledger + challenges) y por último `supabase/storage.sql`.
 3. **Dependencias** — `npm install`.
 4. **Dev** — `npm run dev`.
 
@@ -94,6 +126,7 @@ Definido en `lib/fees.ts` y replicado en los contratos:
 | course | 10% |
 | service | 3% |
 | onchain | 3% |
+| challenge | 5% |
 
 ## API pública (developers)
 

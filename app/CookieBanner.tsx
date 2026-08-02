@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
-const KEY = 'contenline-cookie-consent';
+const KEY = 'adiecoin-cookie-consent';
 
 /**
  * Banner de consentimiento de cookies. Hoy solo usamos almacenamiento

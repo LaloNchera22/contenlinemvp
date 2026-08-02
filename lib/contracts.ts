@@ -6,6 +6,9 @@ export const CONTRACTS = {
   payment: (process.env.NEXT_PUBLIC_CONTRACT_PAYMENT ?? '') as Address,
   usdc: (process.env.NEXT_PUBLIC_USDC_POLYGON ??
     '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174') as Address,
+  // AdieCoin treasury wallet: USDC sent here funds the depositor's internal AUSD
+  // balance 1:1. The deposit endpoint verifies a USDC Transfer to this address.
+  treasury: (process.env.NEXT_PUBLIC_ADIECOIN_TREASURY ?? '') as Address,
 };
 
 export function isWhitelistedContract(address: string): boolean {
@@ -56,8 +59,35 @@ export const SUBSCRIPTION_EVENT_ABI = [
   },
 ] as const;
 
-/** ABI mínima de ERC20 para approve/allowance desde el cliente. */
+/**
+ * ABI del evento Transfer de ERC20. Lo usa el endpoint de depósito para
+ * verificar onchain que la wallet del usuario transfirió USDC a la tesorería
+ * antes de acreditar el saldo interno en AUSD.
+ */
+export const ERC20_TRANSFER_EVENT_ABI = [
+  {
+    type: 'event',
+    name: 'Transfer',
+    inputs: [
+      { name: 'from', type: 'address', indexed: true },
+      { name: 'to', type: 'address', indexed: true },
+      { name: 'value', type: 'uint256', indexed: false },
+    ],
+  },
+] as const;
+
+/** ABI mínima de ERC20 para approve/allowance/transfer desde el cliente. */
 export const ERC20_ABI = [
+  {
+    type: 'function',
+    name: 'transfer',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'to', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'bool' }],
+  },
   {
     type: 'function',
     name: 'approve',

@@ -2,10 +2,10 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Contenline',
-    short_name: 'Contenline',
+    name: 'AdieCoin',
+    short_name: 'AdieCoin',
     description:
-      'Monetización cripto para creadores: suscripciones, cursos y servicios con pagos en USDC sobre Polygon.',
+      'The stablecoin wallet for creators: an internal AUSD balance for recurring subscriptions, content and fan challenges — funded by USDC on Polygon.',
     start_url: '/',
     display: 'standalone',
     background_color: '#121212',

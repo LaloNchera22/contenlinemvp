@@ -1,28 +1,28 @@
 /**
- * i18n mínimo para las páginas públicas (landing multilenguaje con hreflang).
+ * i18n for AdieCoin's public pages (multi-language landing with hreflang).
  *
- * El dashboard es privado (noindex) y se mantiene en español; las rutas
- * públicas indexables (`/`, `/en`, `/pt`) sirven el mismo contenido traducido
- * y se declaran mutuamente como alternates para que los buscadores sirvan la
- * versión correcta según el idioma del usuario.
+ * The product ships English-first: the default locale lives at `/`, and the
+ * other locales at `/<locale>`. The private dashboard stays noindex. Every
+ * public locale declares the others as alternates so search engines serve the
+ * right version per user.
  */
 
-export const locales = ['es', 'en', 'pt'] as const;
+export const locales = ['en', 'es', 'pt'] as const;
 export type Locale = (typeof locales)[number];
-export const defaultLocale: Locale = 'es';
+export const defaultLocale: Locale = 'en';
 
-/** Ruta pública de cada locale: el default vive en `/`, el resto en `/<locale>`. */
+/** Public path for each locale: the default lives at `/`, the rest at `/<locale>`. */
 export function localePath(locale: Locale): string {
   return locale === defaultLocale ? '/' : `/${locale}`;
 }
 
-/** Deriva el locale desde el pathname (ej. para el atributo lang del <html>). */
+/** Derives the locale from the pathname (e.g. for the <html lang> attribute). */
 export function localeFromPathname(pathname: string): Locale {
   const seg = pathname.split('/')[1];
   return (locales as readonly string[]).includes(seg) ? (seg as Locale) : defaultLocale;
 }
 
-/** Mapa hreflang → ruta, usado en metadata.alternates.languages y el sitemap. */
+/** hreflang → path map, used in metadata.alternates.languages and the sitemap. */
 export function hreflangAlternates(): Record<string, string> {
   const map: Record<string, string> = {};
   for (const l of locales) map[l] = localePath(l);
@@ -31,8 +31,8 @@ export function hreflangAlternates(): Record<string, string> {
 }
 
 export const OG_LOCALES: Record<Locale, string> = {
-  es: 'es_ES',
   en: 'en_US',
+  es: 'es_ES',
   pt: 'pt_BR',
 };
 
@@ -72,85 +72,26 @@ export type LandingDict = {
 };
 
 export const dictionaries: Record<Locale, LandingDict> = {
-  es: {
-    meta: {
-      title: 'Contenline — Monetización cripto para creadores',
-      description:
-        'Suscripciones, cursos y servicios con pagos en USDC sobre Polygon. Panel de creador + API de pagos cripto estilo Stripe para developers.',
-      keywords: [
-        'pagos cripto',
-        'USDC',
-        'Polygon',
-        'monetización para creadores',
-        'suscripciones onchain',
-        'API de pagos web3',
-      ],
-    },
-    nav: { docs: 'Documentación', dashboard: 'Dashboard' },
-    hero: {
-      line1: 'Monetiza tu contenido',
-      line2: 'sin intermediarios',
-      body: 'Gestiona suscripciones, cursos y servicios con pagos en USDC sobre Polygon. Y ofrece a developers una API de pagos cripto — todo en un solo dashboard, non-custodial.',
-      signIn: 'Iniciar sesión con Ethereum',
-      signing: 'Firmando…',
-      connect: 'Conecta tu wallet para empezar',
-      secondaryCta: 'Ver la API',
-    },
-    features: [
-      {
-        title: 'Panel de creador',
-        body: 'Contenido exclusivo, cursos y servicios con acceso controlado por suscripción onchain.',
-        bullets: ['Suscripciones en USDC', 'Contenido con signed URLs', 'Métricas de ingresos'],
-      },
-      {
-        title: 'Infra de pagos',
-        body: 'API keys estilo Stripe para integrar checkouts de USDC en tu propia app.',
-        bullets: ['Checkout embebible', 'Webhooks firmados (HMAC)', 'Sesiones idempotentes'],
-      },
-      {
-        title: 'Seguridad Web3',
-        body: 'Autenticación con tu wallet y verificación onchain de cada pago.',
-        bullets: ['Sign-In with Ethereum', 'RLS en Supabase', 'Non-custodial por diseño'],
-      },
-    ],
-    stack: {
-      title: 'Construido sobre infraestructura probada',
-      items: [
-        { name: 'USDC · Polygon', detail: 'Pagos estables con fees de centavos' },
-        { name: 'SIWE', detail: 'Tu wallet es tu identidad' },
-        { name: 'Supabase', detail: 'Postgres con Row Level Security' },
-        { name: 'Webhooks', detail: 'Eventos firmados con HMAC-SHA256' },
-      ],
-    },
-    footer: {
-      tagline: 'Contenline · Protocolo non-custodial de pagos en USDC sobre Polygon',
-      dashboard: 'Dashboard',
-      docs: 'API · Docs',
-      privacy: 'Privacidad',
-      terms: 'Términos',
-      cookies: 'Cookies',
-      language: 'Idioma',
-    },
-  },
   en: {
     meta: {
-      title: 'Contenline — Crypto monetization for creators',
+      title: 'AdieCoin — The stablecoin wallet for creators',
       description:
-        'Subscriptions, courses and services paid in USDC on Polygon. Creator dashboard + a Stripe-style crypto payments API for developers.',
+        'AdieCoin gives every creator a stablecoin balance (AUSD). Fund it once with USDC, then run recurring subscriptions, sell content, and accept fan challenges — all settled instantly from your internal balance, non-custodial.',
       keywords: [
-        'crypto payments',
-        'USDC',
-        'Polygon',
+        'creator stablecoin',
+        'AUSD',
+        'recurring crypto subscriptions',
         'creator monetization',
-        'onchain subscriptions',
-        'web3 payments API',
+        'fan challenges',
+        'USDC deposit',
+        'non-custodial payments',
       ],
     },
     nav: { docs: 'Docs', dashboard: 'Dashboard' },
     hero: {
-      line1: 'Monetize your content',
-      line2: 'without middlemen',
-      body: 'Manage subscriptions, courses and services with USDC payments on Polygon. Plus a crypto payments API for developers — all in one non-custodial dashboard.',
+      line1: 'A stablecoin balance',
+      line2: 'for every creator',
+      body: 'Top up once with USDC and it becomes AUSD in your AdieCoin wallet. Subscriptions renew automatically from your balance, and fans can send you paid challenges — no gas per payment, no middlemen, non-custodial by design.',
       signIn: 'Sign in with Ethereum',
       signing: 'Signing…',
       connect: 'Connect your wallet to start',
@@ -158,32 +99,32 @@ export const dictionaries: Record<Locale, LandingDict> = {
     },
     features: [
       {
-        title: 'Creator dashboard',
-        body: 'Exclusive content, courses and services gated by onchain subscriptions.',
-        bullets: ['USDC subscriptions', 'Signed URLs for content', 'Earnings analytics'],
+        title: 'Internal AUSD wallet',
+        body: 'Deposit USDC on Polygon and it credits your balance 1:1 as AUSD. Every payment settles instantly against your balance — no per-transaction gas.',
+        bullets: ['USDC → AUSD, 1:1', 'Instant off-chain settlement', 'Append-only ledger'],
       },
       {
-        title: 'Payments infra',
-        body: 'Stripe-style API keys to embed USDC checkouts in your own app.',
-        bullets: ['Embeddable checkout', 'Signed webhooks (HMAC)', 'Idempotent sessions'],
+        title: 'Recurring subscriptions',
+        body: 'Fans subscribe once and renewals are auto-charged from their AUSD balance. Predictable revenue without asking them to sign every month.',
+        bullets: ['Auto-renew from balance', 'Monthly & yearly plans', 'Gated exclusive content'],
       },
       {
-        title: 'Web3 security',
-        body: 'Authenticate with your wallet and verify every payment onchain.',
-        bullets: ['Sign-In with Ethereum', 'Supabase RLS', 'Non-custodial by design'],
+        title: 'Fan challenges',
+        body: 'Fans author a paid challenge or commission and send it to you with AUSD staked in escrow. Accept and deliver to release the funds.',
+        bullets: ['Fan-authored & staked', 'Escrowed until delivered', 'Auto-refund if declined'],
       },
     ],
     stack: {
       title: 'Built on proven infrastructure',
       items: [
-        { name: 'USDC · Polygon', detail: 'Stable payments with cent-level fees' },
+        { name: 'AUSD', detail: 'Internal stablecoin, pegged 1:1 to USDC' },
+        { name: 'USDC · Polygon', detail: 'On-ramp deposits with cent-level fees' },
         { name: 'SIWE', detail: 'Your wallet is your identity' },
-        { name: 'Supabase', detail: 'Postgres with Row Level Security' },
-        { name: 'Webhooks', detail: 'HMAC-SHA256 signed events' },
+        { name: 'Supabase', detail: 'Postgres ledger with Row Level Security' },
       ],
     },
     footer: {
-      tagline: 'Contenline · Non-custodial USDC payments protocol on Polygon',
+      tagline: 'AdieCoin · Stablecoin balances and fan challenges for creators',
       dashboard: 'Dashboard',
       docs: 'API · Docs',
       privacy: 'Privacy',
@@ -192,25 +133,87 @@ export const dictionaries: Record<Locale, LandingDict> = {
       language: 'Language',
     },
   },
+  es: {
+    meta: {
+      title: 'AdieCoin — La wallet stablecoin para creadores',
+      description:
+        'AdieCoin le da a cada creador un saldo en stablecoin (AUSD). Recárgalo una vez con USDC y gestiona suscripciones recurrentes, vende contenido y recibe retos de fans — todo se liquida al instante desde tu saldo interno, non-custodial.',
+      keywords: [
+        'stablecoin para creadores',
+        'AUSD',
+        'suscripciones cripto recurrentes',
+        'monetización para creadores',
+        'retos de fans',
+        'depósito USDC',
+        'pagos non-custodial',
+      ],
+    },
+    nav: { docs: 'Documentación', dashboard: 'Dashboard' },
+    hero: {
+      line1: 'Un saldo en stablecoin',
+      line2: 'para cada creador',
+      body: 'Recarga una vez con USDC y se convierte en AUSD en tu wallet de AdieCoin. Las suscripciones se renuevan solas desde tu saldo y los fans pueden enviarte retos pagados — sin gas por pago, sin intermediarios y non-custodial por diseño.',
+      signIn: 'Iniciar sesión con Ethereum',
+      signing: 'Firmando…',
+      connect: 'Conecta tu wallet para empezar',
+      secondaryCta: 'Ver la API',
+    },
+    features: [
+      {
+        title: 'Wallet interna AUSD',
+        body: 'Deposita USDC en Polygon y acredita tu saldo 1:1 como AUSD. Cada pago se liquida al instante contra tu saldo — sin gas por transacción.',
+        bullets: ['USDC → AUSD, 1:1', 'Liquidación instantánea', 'Ledger append-only'],
+      },
+      {
+        title: 'Suscripciones recurrentes',
+        body: 'Los fans se suscriben una vez y las renovaciones se cobran solas desde su saldo AUSD. Ingresos predecibles sin pedir firma cada mes.',
+        bullets: ['Auto-renovación desde saldo', 'Planes mensuales y anuales', 'Contenido exclusivo'],
+      },
+      {
+        title: 'Retos de fans',
+        body: 'Un fan crea un reto o encargo pagado y te lo envía con AUSD en garantía. Acepta y entrega para liberar los fondos.',
+        bullets: ['Creados y financiados por el fan', 'En garantía hasta entregar', 'Reembolso si rechazas'],
+      },
+    ],
+    stack: {
+      title: 'Construido sobre infraestructura probada',
+      items: [
+        { name: 'AUSD', detail: 'Stablecoin interno, pegado 1:1 a USDC' },
+        { name: 'USDC · Polygon', detail: 'Depósitos de entrada con fees de centavos' },
+        { name: 'SIWE', detail: 'Tu wallet es tu identidad' },
+        { name: 'Supabase', detail: 'Ledger en Postgres con Row Level Security' },
+      ],
+    },
+    footer: {
+      tagline: 'AdieCoin · Saldos en stablecoin y retos de fans para creadores',
+      dashboard: 'Dashboard',
+      docs: 'API · Docs',
+      privacy: 'Privacidad',
+      terms: 'Términos',
+      cookies: 'Cookies',
+      language: 'Idioma',
+    },
+  },
   pt: {
     meta: {
-      title: 'Contenline — Monetização cripto para criadores',
+      title: 'AdieCoin — A carteira stablecoin para criadores',
       description:
-        'Assinaturas, cursos e serviços pagos em USDC na Polygon. Painel do criador + API de pagamentos cripto estilo Stripe para developers.',
+        'A AdieCoin dá a cada criador um saldo em stablecoin (AUSD). Recarregue uma vez com USDC e gerencie assinaturas recorrentes, venda conteúdo e receba desafios de fãs — tudo liquidado na hora a partir do seu saldo interno, non-custodial.',
       keywords: [
-        'pagamentos cripto',
-        'USDC',
-        'Polygon',
+        'stablecoin para criadores',
+        'AUSD',
+        'assinaturas cripto recorrentes',
         'monetização para criadores',
-        'assinaturas onchain',
-        'API de pagamentos web3',
+        'desafios de fãs',
+        'depósito USDC',
+        'pagamentos non-custodial',
       ],
     },
     nav: { docs: 'Documentação', dashboard: 'Dashboard' },
     hero: {
-      line1: 'Monetize seu conteúdo',
-      line2: 'sem intermediários',
-      body: 'Gerencie assinaturas, cursos e serviços com pagamentos em USDC na Polygon. E ofereça aos developers uma API de pagamentos cripto — tudo em um só dashboard, non-custodial.',
+      line1: 'Um saldo em stablecoin',
+      line2: 'para cada criador',
+      body: 'Recarregue uma vez com USDC e ele vira AUSD na sua carteira AdieCoin. As assinaturas renovam sozinhas a partir do saldo e os fãs podem enviar desafios pagos — sem gas por pagamento, sem intermediários e non-custodial por design.',
       signIn: 'Entrar com Ethereum',
       signing: 'Assinando…',
       connect: 'Conecte sua wallet para começar',
@@ -218,32 +221,32 @@ export const dictionaries: Record<Locale, LandingDict> = {
     },
     features: [
       {
-        title: 'Painel do criador',
-        body: 'Conteúdo exclusivo, cursos e serviços com acesso controlado por assinatura onchain.',
-        bullets: ['Assinaturas em USDC', 'Conteúdo com signed URLs', 'Métricas de receita'],
+        title: 'Carteira interna AUSD',
+        body: 'Deposite USDC na Polygon e credite seu saldo 1:1 como AUSD. Cada pagamento é liquidado na hora contra o saldo — sem gas por transação.',
+        bullets: ['USDC → AUSD, 1:1', 'Liquidação instantânea', 'Ledger append-only'],
       },
       {
-        title: 'Infra de pagamentos',
-        body: 'API keys estilo Stripe para integrar checkouts de USDC no seu próprio app.',
-        bullets: ['Checkout embutível', 'Webhooks assinados (HMAC)', 'Sessões idempotentes'],
+        title: 'Assinaturas recorrentes',
+        body: 'Os fãs assinam uma vez e as renovações são cobradas do saldo AUSD deles. Receita previsível sem pedir assinatura todo mês.',
+        bullets: ['Auto-renovação pelo saldo', 'Planos mensais e anuais', 'Conteúdo exclusivo'],
       },
       {
-        title: 'Segurança Web3',
-        body: 'Autentique com sua wallet e verifique cada pagamento onchain.',
-        bullets: ['Sign-In with Ethereum', 'RLS no Supabase', 'Non-custodial por design'],
+        title: 'Desafios de fãs',
+        body: 'Um fã cria um desafio ou encomenda paga e envia para você com AUSD em garantia. Aceite e entregue para liberar os fundos.',
+        bullets: ['Criados e financiados pelo fã', 'Em garantia até entregar', 'Reembolso se recusar'],
       },
     ],
     stack: {
       title: 'Construído sobre infraestrutura comprovada',
       items: [
-        { name: 'USDC · Polygon', detail: 'Pagamentos estáveis com taxas de centavos' },
+        { name: 'AUSD', detail: 'Stablecoin interno, atrelado 1:1 ao USDC' },
+        { name: 'USDC · Polygon', detail: 'Depósitos de entrada com taxas de centavos' },
         { name: 'SIWE', detail: 'Sua wallet é sua identidade' },
-        { name: 'Supabase', detail: 'Postgres com Row Level Security' },
-        { name: 'Webhooks', detail: 'Eventos assinados com HMAC-SHA256' },
+        { name: 'Supabase', detail: 'Ledger em Postgres com Row Level Security' },
       ],
     },
     footer: {
-      tagline: 'Contenline · Protocolo non-custodial de pagamentos em USDC na Polygon',
+      tagline: 'AdieCoin · Saldos em stablecoin e desafios de fãs para criadores',
       dashboard: 'Dashboard',
       docs: 'API · Docs',
       privacy: 'Privacidade',

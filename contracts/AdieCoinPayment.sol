@@ -8,12 +8,12 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
- * @title ContenlinePayment
+ * @title AdieCoinPayment
  * @notice Pagos únicos en USDC para cursos / servicios / API onchain.
  *         category: 0=course(10%), 1=service(3%), 2=onchain(3%).
  *         Previene replay vinculando cada sessionId de Supabase.
  */
-contract ContenlinePayment is ReentrancyGuard, Ownable, Pausable {
+contract AdieCoinPayment is ReentrancyGuard, Ownable, Pausable {
     using SafeERC20 for IERC20;
 
     IERC20 public immutable usdc;

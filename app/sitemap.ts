@@ -19,7 +19,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...locales.map((l) => ({
       url: abs(localePath(l)),
       changeFrequency: 'weekly' as const,
-      priority: l === 'es' ? 1 : 0.9,
+      priority: l === 'en' ? 1 : 0.9,
       alternates: { languages },
     })),
     { url: abs('/docs'), changeFrequency: 'weekly', priority: 0.8 },

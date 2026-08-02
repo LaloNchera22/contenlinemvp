@@ -5,7 +5,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount, useWriteContract, usePublicClient } from 'wagmi';
 import { CONTRACTS, ERC20_ABI, PAYMENT_WRITE_ABI } from '@/lib/contracts';
 
-// Misma convención que ContenlinePayment.sol: 0=course, 1=service, 2=onchain.
+// Misma convención que AdieCoinPayment.sol: 0=course, 1=service, 2=onchain.
 const CATEGORY_INDEX: Record<string, number> = { course: 0, service: 1, onchain: 2 };
 
 export default function CheckoutClient({

@@ -153,7 +153,7 @@ Deno.serve(async (req: Request) => {
   // attempts pasa de 0 → 1 con esta entrega inicial.
   const attempts = 1;
   const rowId = delivery?.id ?? eventId;
-  // Contenline-Delivery-Id es único por INTENTO (rowId:attempt); Event-Id es
+  // AdieCoin-Delivery-Id es único por INTENTO (rowId:attempt); Event-Id es
   // único por EVENTO y se repite entre reintentos para que el receptor deduplique.
   const result = await deliver(session.webhook_url, payload, signature, `${rowId}:${attempts}`, eventId);
   const delivered = result.code >= 200 && result.code < 300;
@@ -185,11 +185,11 @@ async function deliver(
       headers: {
         'Content-Type': 'application/json',
         // Header legacy + nombres canónicos documentados en /docs.
-        'X-Contenline-Signature': signature,
-        'Contenline-Signature': signature,
-        'Contenline-Timestamp': String(Math.floor(Date.now() / 1000)),
-        'Contenline-Delivery-Id': deliveryId,
-        'Contenline-Event-Id': eventId,
+        'X-AdieCoin-Signature': signature,
+        'AdieCoin-Signature': signature,
+        'AdieCoin-Timestamp': String(Math.floor(Date.now() / 1000)),
+        'AdieCoin-Delivery-Id': deliveryId,
+        'AdieCoin-Event-Id': eventId,
       },
       body: payload,
       // El developer debe responder rápido; cortamos a 10s (ver /docs).
