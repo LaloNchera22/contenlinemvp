@@ -38,7 +38,7 @@ export default function EarningsPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Ingresos</h1>
-          <p className="text-white/60 text-sm mt-1">
+          <p className="text-ink/60 text-sm mt-1">
             Modelo de comisiones: suscripción/curso {FEE_CONFIG.subscription * 100}% · servicio/onchain{' '}
             {FEE_CONFIG.service * 100}%.
           </p>
@@ -60,9 +60,9 @@ export default function EarningsPage() {
         ))}
       </div>
 
-      {loading && <p className="mt-6 text-sm text-white/60">Cargando…</p>}
+      {loading && <p className="mt-6 text-sm text-ink/60">Cargando…</p>}
       {!loading && txs.length === 0 && (
-        <p className="mt-6 text-sm text-white/60">Sin transacciones todavía.</p>
+        <p className="mt-6 text-sm text-ink/60">Sin transacciones todavía.</p>
       )}
 
       {/* Móvil: cards apilados (cada fila conserva su contexto). */}
@@ -72,32 +72,32 @@ export default function EarningsPage() {
             <div key={t.id} className="card">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium capitalize">{t.category}</span>
-                <span className="text-xs text-white/60">
+                <span className="text-xs text-ink/60">
                   {new Date(t.created_at).toLocaleDateString()}
                 </span>
               </div>
-              <p className="mt-1 font-mono text-xs text-white/60">
+              <p className="mt-1 font-mono text-xs text-ink/60">
                 {t.from_wallet.slice(0, 6)}…{t.from_wallet.slice(-4)}
               </p>
               <div className="mt-3 grid grid-cols-3 gap-2 text-sm">
                 <div>
-                  <p className="text-xs text-white/60">Monto</p>
+                  <p className="text-xs text-ink/60">Monto</p>
                   <p>${Number(t.amount_usdc).toFixed(2)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-white/60">Comisión</p>
+                  <p className="text-xs text-ink/60">Comisión</p>
                   <p>${Number(t.fee_usdc).toFixed(2)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-white/60">Neto</p>
+                  <p className="text-xs text-ink/60">Neto</p>
                   <p className="text-brand-light">${Number(t.net_usdc).toFixed(2)}</p>
                 </div>
               </div>
               <p className="mt-2 text-xs">
                 {t.verified ? (
-                  <span className="text-green-400">✓ verificada</span>
+                  <span className="text-green-600">✓ verificada</span>
                 ) : (
-                  <span className="text-amber-400">pendiente</span>
+                  <span className="text-amber-600">pendiente</span>
                 )}
               </p>
             </div>
@@ -109,7 +109,7 @@ export default function EarningsPage() {
       {!loading && txs.length > 0 && (
         <div className="mt-6 card hidden sm:block overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="text-white/60 text-left">
+            <thead className="text-ink/60 text-left">
               <tr>
                 <th scope="col" className="py-2">Fecha</th>
                 <th scope="col">Categoría</th>
@@ -129,13 +129,13 @@ export default function EarningsPage() {
                     {t.from_wallet.slice(0, 6)}…{t.from_wallet.slice(-4)}
                   </td>
                   <td className="text-right">${Number(t.amount_usdc).toFixed(2)}</td>
-                  <td className="text-right text-white/60">${Number(t.fee_usdc).toFixed(2)}</td>
+                  <td className="text-right text-ink/60">${Number(t.fee_usdc).toFixed(2)}</td>
                   <td className="text-right text-brand-light">${Number(t.net_usdc).toFixed(2)}</td>
                   <td className="text-right">
                     {t.verified ? (
-                      <span className="text-green-400">✓ verificada</span>
+                      <span className="text-green-600">✓ verificada</span>
                     ) : (
-                      <span className="text-amber-400">pendiente</span>
+                      <span className="text-amber-600">pendiente</span>
                     )}
                   </td>
                 </tr>

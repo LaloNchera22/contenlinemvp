@@ -22,13 +22,13 @@ export default function CookieBanner() {
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 border-t border-surface-border bg-surface-card/95 backdrop-blur px-6 py-4">
       <div className="mx-auto flex max-w-4xl flex-col sm:flex-row sm:items-center gap-3 text-sm">
-        <p className="text-white/80 flex-1">
+        <p className="text-ink/80 flex-1">
           Usamos solo almacenamiento necesario para autenticarte. Consulta nuestra{' '}
-          <Link href="/cookies" className="underline hover:text-white">
+          <Link href="/cookies" className="underline hover:text-ink">
             política de cookies
           </Link>{' '}
           y el{' '}
-          <Link href="/privacy" className="underline hover:text-white">
+          <Link href="/privacy" className="underline hover:text-ink">
             aviso de privacidad
           </Link>
           .

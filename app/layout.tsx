@@ -15,6 +15,10 @@ export const metadata: Metadata = {
   description:
     'A stablecoin balance (AUSD) for every creator. Deposit USDC once, then run recurring subscriptions, sell content and accept fan challenges — settled instantly from your internal balance, non-custodial.',
   applicationName: 'AdieCoin',
+  icons: {
+    icon: '/adie-logo.png',
+    apple: '/adie-logo.png',
+  },
   robots: {
     index: true,
     follow: true,
@@ -30,6 +34,10 @@ export const metadata: Metadata = {
     type: 'website',
   },
   formatDetection: { telephone: false },
+};
+
+export const viewport = {
+  themeColor: '#F5261C',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

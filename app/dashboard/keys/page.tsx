@@ -85,7 +85,7 @@ export default function KeysPage() {
   return (
     <div className="max-w-3xl">
       <h1 className="text-2xl font-bold">API Keys</h1>
-      <p className="text-white/60 text-sm mt-1">
+      <p className="text-ink/60 text-sm mt-1">
         Integra pagos cripto en tu app. La key completa se muestra una sola vez.
       </p>
 
@@ -119,7 +119,7 @@ export default function KeysPage() {
         </div>
 
         {error && (
-          <p className="mt-3 text-sm text-red-400" role="alert">
+          <p className="mt-3 text-sm text-red-600" role="alert">
             {error}
           </p>
         )}
@@ -145,24 +145,24 @@ export default function KeysPage() {
             <div>
               <p className="font-medium">
                 {k.name}{' '}
-                <span className="text-xs text-white/60">({k.environment})</span>
+                <span className="text-xs text-ink/60">({k.environment})</span>
               </p>
-              <p className="font-mono text-xs text-white/60">
+              <p className="font-mono text-xs text-ink/60">
                 {k.key_prefix}••••••• · {k.calls_count} llamadas
                 {k.volume_usdc != null && ` · $${Number(k.volume_usdc).toFixed(2)} USDC`}
               </p>
             </div>
             {k.active ? (
-              <button onClick={() => setToRevoke(k)} className="btn-ghost text-red-400">
+              <button onClick={() => setToRevoke(k)} className="btn-ghost text-red-600">
                 Revocar
               </button>
             ) : (
-              <span className="text-xs text-white/40">revocada</span>
+              <span className="text-xs text-ink/40">revocada</span>
             )}
           </div>
         ))}
         {keys.length === 0 && (
-          <p className="text-sm text-white/60">No tienes keys todavía.</p>
+          <p className="text-sm text-ink/60">No tienes keys todavía.</p>
         )}
       </div>
 

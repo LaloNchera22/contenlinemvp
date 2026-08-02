@@ -8,18 +8,27 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Paleta inspirada en Supabase: acento verde sobre grises neutros.
+        // Branding «adie»: rojo vivo del logotipo sobre superficies blancas.
         brand: {
-          light: '#6EE7B7',
-          DEFAULT: '#3ECF8E',
-          dim: '#24B47E',
-          dark: '#006239',
+          light: '#FF5A52',
+          DEFAULT: '#F5261C', // rojo principal del logo
+          dim: '#D01810',
+          dark: '#A5100A',
         },
         surface: {
-          DEFAULT: '#121212',
-          card: '#1C1C1C',
-          border: '#2E2E2E',
+          // Tema claro: página blanca, tiles/inputs gris muy tenue, bordes suaves.
+          DEFAULT: '#F6F6F7',
+          card: '#FFFFFF',
+          border: '#E7E7EA',
         },
+        // Tinta: color de texto principal. `text-ink`, `text-ink/60`, etc.
+        // sustituyen al antiguo `text-white` del tema oscuro.
+        ink: {
+          DEFAULT: '#18181B',
+        },
+      },
+      boxShadow: {
+        card: '0 1px 2px rgba(24,24,27,0.04), 0 4px 16px rgba(24,24,27,0.05)',
       },
     },
   },

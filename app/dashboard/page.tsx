@@ -32,9 +32,9 @@ export default function DashboardHome() {
   return (
     <div>
       <h1 className="text-2xl font-bold">Resumen del mes</h1>
-      <p className="text-white/60 text-sm mt-1">Métricas de tu actividad en AdieCoin.</p>
+      <p className="text-ink/60 text-sm mt-1">Métricas de tu actividad en AdieCoin.</p>
 
-      {error && <p className="mt-6 text-sm text-amber-400" role="alert">{error}</p>}
+      {error && <p className="mt-6 text-sm text-amber-600" role="alert">{error}</p>}
 
       <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Stat label="Ingreso bruto" value={metrics ? usd(metrics.grossRevenue) : '—'} />
@@ -46,7 +46,7 @@ export default function DashboardHome() {
       {isNewCreator && (
         <div className="mt-10">
           <h2 className="text-lg font-semibold">Primeros pasos</h2>
-          <p className="text-sm text-white/60 mt-1">
+          <p className="text-sm text-ink/60 mt-1">
             Aún no tienes actividad. Empieza por aquí:
           </p>
           <div className="mt-4 grid sm:grid-cols-3 gap-4">
@@ -92,7 +92,7 @@ function OnboardingCard({
         {step}
       </span>
       <p className="mt-3 font-semibold text-brand-light">{title}</p>
-      <p className="mt-1 text-sm text-white/60">{body}</p>
+      <p className="mt-1 text-sm text-ink/60">{body}</p>
     </Link>
   );
 }

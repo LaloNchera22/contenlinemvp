@@ -39,21 +39,21 @@ export default async function CheckoutPage({ params }: { params: { id: string } 
   return (
     <main className="min-h-screen flex items-center justify-center px-6 py-16">
       <div className="card w-full max-w-md">
-        <p className="text-xs uppercase tracking-wide text-white/60">Pago seguro · AdieCoin</p>
+        <p className="text-xs uppercase tracking-wide text-ink/60">Pago seguro · AdieCoin</p>
         <h1 className="mt-2 text-2xl font-bold">
-          ${Number(session.amount_usdc).toFixed(2)} <span className="text-base font-normal text-white/60">USDC</span>
+          ${Number(session.amount_usdc).toFixed(2)} <span className="text-base font-normal text-ink/60">USDC</span>
         </h1>
-        <p className="mt-1 text-sm text-white/70">
+        <p className="mt-1 text-sm text-ink/70">
           {session.description || `Pago a ${creator.display_name}`}
         </p>
-        <p className="mt-1 text-xs text-white/60">
+        <p className="mt-1 text-xs text-ink/60">
           Para @{creator.username} · categoría {session.category}
         </p>
 
         {session.status === 'completed' ? (
-          <p className="mt-6 text-sm text-green-400">Este pago ya fue completado. ✓</p>
+          <p className="mt-6 text-sm text-green-600">Este pago ya fue completado. ✓</p>
         ) : expired ? (
-          <p className="mt-6 text-sm text-amber-400">Esta sesión de pago expiró.</p>
+          <p className="mt-6 text-sm text-amber-600">Esta sesión de pago expiró.</p>
         ) : (
           <CheckoutClient
             sessionId={session.id}
@@ -63,7 +63,7 @@ export default async function CheckoutPage({ params }: { params: { id: string } 
           />
         )}
 
-        <p className="mt-6 text-[11px] leading-relaxed text-white/50">
+        <p className="mt-6 text-[11px] leading-relaxed text-ink/50">
           AdieCoin es un protocolo non-custodial: el pago se ejecuta directamente
           entre tu wallet y la del creador. La plataforma no custodia fondos.
         </p>

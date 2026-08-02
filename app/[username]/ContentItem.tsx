@@ -54,7 +54,7 @@ export default function ContentItem({
         onClick={openItem}
         className="card text-left w-full aspect-square flex items-center justify-center hover:border-brand transition-colors"
       >
-        <span className="text-sm text-white/70 line-clamp-3">{title}</span>
+        <span className="text-sm text-ink/70 line-clamp-3">{title}</span>
       </button>
 
       {open && (
@@ -66,8 +66,8 @@ export default function ContentItem({
           aria-label={title}
         >
           <div className="max-w-3xl w-full" onClick={(e) => e.stopPropagation()}>
-            {loading && <p className="text-center text-white/70" role="status">Cargando…</p>}
-            {error && <p className="text-center text-amber-400" role="alert">{error}</p>}
+            {loading && <p className="text-center text-ink/70" role="status">Cargando…</p>}
+            {error && <p className="text-center text-amber-600" role="alert">{error}</p>}
             {url && mediaType === 'video' && (
               // eslint-disable-next-line jsx-a11y/media-has-caption
               <video src={url} controls className="w-full rounded-xl" />

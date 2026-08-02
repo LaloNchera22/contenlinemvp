@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { headers } from 'next/headers';
 import { dictionaries, locales, localePath, type Locale } from '@/lib/i18n';
 import { siteUrl } from '@/lib/seo';
@@ -58,15 +59,21 @@ export default function Landing({ locale }: { locale: Locale }) {
       <header className="sticky top-0 z-20 border-b border-surface-border bg-surface/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
           <div className="flex items-center gap-8">
-            <Link href={localePath(locale)} className="flex items-center gap-2 text-lg font-bold">
-              <LogoMark />
-              Adie<span className="text-brand">Coin</span>
+            <Link href={localePath(locale)} className="flex items-center gap-2" aria-label="adie">
+              <Image
+                src="/adie-logo.png"
+                alt="adie"
+                width={132}
+                height={44}
+                priority
+                className="h-7 w-auto"
+              />
             </Link>
-            <nav className="hidden items-center gap-5 text-sm text-white/60 sm:flex">
-              <Link href="/docs" className="hover:text-white">
+            <nav className="hidden items-center gap-5 text-sm text-ink/60 sm:flex">
+              <Link href="/docs" className="hover:text-ink">
                 {dict.nav.docs}
               </Link>
-              <Link href="/dashboard" className="hover:text-white">
+              <Link href="/dashboard" className="hover:text-ink">
                 {dict.nav.dashboard}
               </Link>
             </nav>
@@ -99,7 +106,7 @@ export default function Landing({ locale }: { locale: Locale }) {
           </div>
         </div>
         <div className="flex items-start md:pt-3">
-          <p className="max-w-xl text-lg leading-relaxed text-white/60">{dict.hero.body}</p>
+          <p className="max-w-xl text-lg leading-relaxed text-ink/60">{dict.hero.body}</p>
         </div>
       </section>
 
@@ -107,13 +114,13 @@ export default function Landing({ locale }: { locale: Locale }) {
         {dict.features.map((f, i) => (
           <article key={f.title} className="card p-6">
             <div className="flex items-center gap-3">
-              <span className="text-white/70">{FEATURE_ICONS[i]}</span>
+              <span className="text-ink/70">{FEATURE_ICONS[i]}</span>
               <h2 className="font-semibold">{f.title}</h2>
             </div>
-            <p className="mt-3 text-sm leading-relaxed text-white/60">{f.body}</p>
+            <p className="mt-3 text-sm leading-relaxed text-ink/60">{f.body}</p>
             <ul className="mt-5 space-y-2">
               {f.bullets.map((b) => (
-                <li key={b} className="flex items-center gap-2 text-sm text-white/70">
+                <li key={b} className="flex items-center gap-2 text-sm text-ink/70">
                   <CheckIcon />
                   {b}
                 </li>
@@ -125,41 +132,41 @@ export default function Landing({ locale }: { locale: Locale }) {
 
       <section className="border-t border-surface-border bg-surface-card/40">
         <div className="mx-auto max-w-6xl px-6 py-14">
-          <h2 className="text-center text-sm font-medium uppercase tracking-widest text-white/40">
+          <h2 className="text-center text-sm font-medium uppercase tracking-widest text-ink/40">
             {dict.stack.title}
           </h2>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {dict.stack.items.map((item) => (
               <div key={item.name} className="rounded-lg border border-surface-border bg-surface p-4">
                 <p className="font-mono text-sm text-brand">{item.name}</p>
-                <p className="mt-1 text-xs text-white/60">{item.detail}</p>
+                <p className="mt-1 text-xs text-ink/60">{item.detail}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <footer className="border-t border-surface-border px-6 py-8 text-center text-sm text-white/60">
+      <footer className="border-t border-surface-border px-6 py-8 text-center text-sm text-ink/60">
         <p>{dict.footer.tagline}</p>
         <nav className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
-          <Link href="/dashboard" className="hover:text-white">
+          <Link href="/dashboard" className="hover:text-ink">
             {dict.footer.dashboard}
           </Link>
-          <Link href="/docs" className="hover:text-white">
+          <Link href="/docs" className="hover:text-ink">
             {dict.footer.docs}
           </Link>
-          <Link href="/privacy" className="hover:text-white">
+          <Link href="/privacy" className="hover:text-ink">
             {dict.footer.privacy}
           </Link>
-          <Link href="/terms" className="hover:text-white">
+          <Link href="/terms" className="hover:text-ink">
             {dict.footer.terms}
           </Link>
-          <Link href="/cookies" className="hover:text-white">
+          <Link href="/cookies" className="hover:text-ink">
             {dict.footer.cookies}
           </Link>
         </nav>
         <div className="mt-4 flex items-center justify-center gap-2 text-xs">
-          <span className="text-white/40">{dict.footer.language}:</span>
+          <span className="text-ink/40">{dict.footer.language}:</span>
           <LanguageSwitcher current={locale} />
         </div>
       </footer>
@@ -176,7 +183,7 @@ function LanguageSwitcher({ current }: { current: Locale }) {
           href={localePath(l)}
           hrefLang={l}
           className={`rounded px-1.5 py-0.5 uppercase transition-colors ${
-            l === current ? 'bg-surface-border text-white' : 'text-white/50 hover:text-white'
+            l === current ? 'bg-surface-border text-ink' : 'text-ink/50 hover:text-ink'
           }`}
         >
           {l}
@@ -186,18 +193,10 @@ function LanguageSwitcher({ current }: { current: Locale }) {
   );
 }
 
-function LogoMark() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path d="M13 2 3 14h7l-1 8 12-14h-8l0-6z" fill="#3ECF8E" />
-    </svg>
-  );
-}
-
 function CheckIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden className="shrink-0">
-      <path d="M5 12.5 10 17.5 19 7" stroke="#3ECF8E" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M5 12.5 10 17.5 19 7" stroke="#F5261C" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

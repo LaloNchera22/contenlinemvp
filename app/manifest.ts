@@ -8,8 +8,15 @@ export default function manifest(): MetadataRoute.Manifest {
       'The stablecoin wallet for creators: an internal AUSD balance for recurring subscriptions, content and fan challenges — funded by USDC on Polygon.',
     start_url: '/',
     display: 'standalone',
-    background_color: '#121212',
-    theme_color: '#121212',
-    icons: [],
+    background_color: '#ffffff',
+    theme_color: '#F5261C',
+    icons: [
+      {
+        src: '/adie-logo.png',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'any',
+      },
+    ],
   };
 }

@@ -35,7 +35,7 @@ export default function HeroAuth({ labels }: { labels: Labels }) {
       ) : (
         <ConnectButton label={labels.connect} />
       )}
-      {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
+      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
     </div>
   );
 }

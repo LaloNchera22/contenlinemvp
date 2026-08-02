@@ -79,7 +79,7 @@ export default function ServicesPage() {
   return (
     <div className="max-w-3xl">
       <h1 className="text-2xl font-bold">Servicios</h1>
-      <p className="text-white/60 text-sm mt-1">Ofrece servicios puntuales (consultorías, sesiones, etc.).</p>
+      <p className="text-ink/60 text-sm mt-1">Ofrece servicios puntuales (consultorías, sesiones, etc.).</p>
 
       <div className="card mt-6 space-y-4">
         <h2 className="font-semibold">{editingId ? 'Editar servicio' : 'Nuevo servicio'}</h2>
@@ -106,16 +106,16 @@ export default function ServicesPage() {
           </button>
           {editingId && <button onClick={resetForm} disabled={busy} className="btn-ghost">Cancelar</button>}
         </div>
-        {error && <p className="text-sm text-red-400" role="alert">{error}</p>}
+        {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
       </div>
 
       <div className="mt-6 space-y-2">
         {loading ? (
-          <p className="text-sm text-white/60">Cargando servicios…</p>
+          <p className="text-sm text-ink/60">Cargando servicios…</p>
         ) : services.length === 0 ? (
           <div className="card text-center py-10">
             <p className="font-medium">Aún no tienes servicios</p>
-            <p className="text-sm text-white/60 mt-1">Crea tu primer servicio para ofrecerlo a tu audiencia.</p>
+            <p className="text-sm text-ink/60 mt-1">Crea tu primer servicio para ofrecerlo a tu audiencia.</p>
           </div>
         ) : (
           services.map((s) => (
@@ -123,13 +123,13 @@ export default function ServicesPage() {
               <div>
                 <p className="font-medium">
                   {s.title}{' '}
-                  <span className="text-xs text-white/60">(${Number(s.price_usdc).toFixed(2)} USDC)</span>
+                  <span className="text-xs text-ink/60">(${Number(s.price_usdc).toFixed(2)} USDC)</span>
                 </p>
-                {!s.active && <p className="text-xs mt-1 text-white/40">inactivo</p>}
+                {!s.active && <p className="text-xs mt-1 text-ink/40">inactivo</p>}
               </div>
               <div className="flex gap-2 shrink-0">
                 <button onClick={() => startEdit(s)} disabled={busy} className="btn-ghost">Editar</button>
-                <button onClick={() => setToDelete(s)} disabled={busy} className="btn-ghost text-red-400">
+                <button onClick={() => setToDelete(s)} disabled={busy} className="btn-ghost text-red-600">
                   Eliminar
                 </button>
               </div>

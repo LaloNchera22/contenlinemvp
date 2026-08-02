@@ -24,7 +24,7 @@ function Section({ id, title, children }: { id: string; title: string; children:
   return (
     <section id={id} className="mt-12 scroll-mt-20">
       <h2 className="text-xl font-semibold">{title}</h2>
-      <div className="mt-3 space-y-3 text-sm text-white/70">{children}</div>
+      <div className="mt-3 space-y-3 text-sm text-ink/70">{children}</div>
     </section>
   );
 }
@@ -32,12 +32,12 @@ function Section({ id, title, children }: { id: string; title: string; children:
 export default function DocsPage() {
   return (
     <main className="min-h-screen max-w-3xl mx-auto px-6 py-16">
-      <Link href="/" className="text-sm text-white/60 hover:text-white">
+      <Link href="/" className="text-sm text-ink/60 hover:text-ink">
         ← AdieCoin
       </Link>
 
       <h1 className="mt-6 text-3xl font-bold">Documentación de la API</h1>
-      <p className="mt-3 text-white/60">
+      <p className="mt-3 text-ink/60">
         Integra pagos en USDC sobre Polygon en tu app. Crea un checkout embebible,
         deja que tu usuario pague onchain y recibe un webhook firmado cuando el pago
         se completa.
@@ -138,7 +138,7 @@ AdieCoin-Event-Id:    <único por EVENTO; se repite en reintentos>`}</Code>
           <li><code>subscription.created</code> — nueva suscripción (ver nota abajo).</li>
           <li><code>subscription.renewed</code> — renovación de una suscripción.</li>
         </ul>
-        <p className="text-white/60">
+        <p className="text-ink/60">
           Nota: los eventos de suscripción se emiten para checkouts de suscripción
           que incluyan <code>webhook_url</code>. Las suscripciones iniciadas desde el
           perfil público del creador (sin sesión de API) no disparan webhook porque

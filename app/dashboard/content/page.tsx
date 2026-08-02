@@ -77,7 +77,7 @@ export default function ContentPage() {
   return (
     <div className="max-w-2xl">
       <h1 className="text-2xl font-bold">Contenido</h1>
-      <p className="text-white/60 text-sm mt-1">
+      <p className="text-ink/60 text-sm mt-1">
         El contenido exclusivo se sirve mediante signed URLs solo a suscriptores activos.
       </p>
 
@@ -115,8 +115,8 @@ export default function ContentPage() {
         <button onClick={create} disabled={busy} className="btn-primary">
           {busy ? 'Procesando…' : 'Publicar'}
         </button>
-        {status && <p className="text-sm text-white/70" role="status" aria-live="polite">{status}</p>}
-        {error && <p className="text-sm text-red-400" role="alert">{error}</p>}
+        {status && <p className="text-sm text-ink/70" role="status" aria-live="polite">{status}</p>}
+        {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
       </div>
     </div>
   );
