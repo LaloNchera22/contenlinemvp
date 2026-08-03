@@ -64,8 +64,9 @@ export default async function CheckoutPage({ params }: { params: { id: string } 
         )}
 
         <p className="mt-6 text-[11px] leading-relaxed text-ink/50">
-          AdieCoin es un protocolo non-custodial: el pago se ejecuta directamente
-          entre tu wallet y la del creador. La plataforma no custodia fondos.
+          Este pago es non-custodial: se ejecuta directamente entre tu wallet y la
+          del creador mediante un contrato en Polygon; la plataforma no toma
+          posesión de estos fondos.
         </p>
       </div>
     </main>

@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     template: '%s · AdieCoin',
   },
   description:
-    'A stablecoin balance (AUSD) for every creator. Deposit USDC once, then run recurring subscriptions, sell content and accept fan challenges — settled instantly from your internal balance, non-custodial.',
+    'A stablecoin balance (AUSD) for every creator. Deposit USDC once, then run recurring subscriptions, sell content and accept fan challenges — settled instantly from your internal balance, and withdrawable back to USDC anytime.',
   applicationName: 'AdieCoin',
   icons: {
     icon: '/adie-logo.png',
