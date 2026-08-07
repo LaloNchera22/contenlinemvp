@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
-import Landing from '../components/landing/Landing';
-import { landingMetadata } from '@/lib/seo';
+import PublicLanding from '../components/landing/PublicLanding';
+import { publicLandingMetadata } from '@/lib/seo';
 
-export const metadata: Metadata = landingMetadata('pt');
+export const metadata: Metadata = publicLandingMetadata();
 
 export default function HomePt() {
-  return <Landing locale="pt" />;
+  return <PublicLanding />;
 }

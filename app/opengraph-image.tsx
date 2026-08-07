@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
-export const alt = 'adie — Monetización cripto para creadores';
+export const alt = 'adie — Pago protegido para tus comisiones';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -31,11 +31,11 @@ export default function OgImage() {
           adie<span>.</span>
         </div>
         <div style={{ marginTop: 48, fontSize: 76, fontWeight: 700, lineHeight: 1.1, display: 'flex', flexDirection: 'column' }}>
-          <span>Monetiza tu contenido</span>
-          <span style={{ color: '#F5261C' }}>sin intermediarios</span>
+          <span>Cobra tus comisiones</span>
+          <span style={{ color: '#F5261C' }}>sin miedo a que no te paguen</span>
         </div>
         <div style={{ marginTop: 40, fontSize: 30, color: 'rgba(24,24,27,0.6)', maxWidth: 900 }}>
-          Suscripciones, cursos y servicios con pagos en USDC sobre Polygon · API para developers
+          Pago protegido: el dinero queda seguro hasta que apruebas la entrega · protege al cliente y al artista
         </div>
       </div>
     ),

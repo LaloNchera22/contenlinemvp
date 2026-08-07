@@ -22,7 +22,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: l === 'en' ? 1 : 0.9,
       alternates: { languages },
     })),
-    { url: abs('/docs'), changeFrequency: 'weekly', priority: 0.8 },
     { url: abs('/privacy'), changeFrequency: 'yearly', priority: 0.2 },
     { url: abs('/terms'), changeFrequency: 'yearly', priority: 0.2 },
     { url: abs('/cookies'), changeFrequency: 'yearly', priority: 0.2 },
