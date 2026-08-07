@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Documentación de la API · AdieCoin',
+  title: 'Documentación de la API · adie',
   description:
     'API pública de pagos USDC: crea checkouts, consulta sesiones y recibe webhooks firmados.',
   alternates: { canonical: '/docs' },
@@ -33,7 +33,7 @@ export default function DocsPage() {
   return (
     <main className="min-h-screen max-w-3xl mx-auto px-6 py-16">
       <Link href="/" className="text-sm text-ink/60 hover:text-ink">
-        ← AdieCoin
+        ← adie
       </Link>
 
       <h1 className="mt-6 text-3xl font-bold">Documentación de la API</h1>
@@ -109,7 +109,7 @@ export default function DocsPage() {
 
       <Section id="webhooks" title="Webhooks">
         <p>
-          Cuando una sesión con <code>webhook_url</code> se completa, AdieCoin
+          Cuando una sesión con <code>webhook_url</code> se completa, adie
           envía un <code>POST</code> firmado a tu endpoint. Tu servidor debe
           responder <strong>2xx en menos de 10&nbsp;segundos</strong>; de lo
           contrario se considera fallo y se reintenta (ver Reintentos).

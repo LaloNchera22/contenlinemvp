@@ -3,10 +3,19 @@ import { dictionaries, hreflangAlternates, localePath, OG_LOCALES, type Locale }
 
 /**
  * Base absoluta del sitio. Next.js la usa para resolver URLs relativas en
- * metadata (canonical, hreflang, Open Graph) y en el sitemap.
+ * metadata (canonical, hreflang, Open Graph, Twitter) y en el sitemap.
+ *
+ * Orden de precedencia: NEXT_PUBLIC_SITE_URL (canónica del despliegue) →
+ * NEXT_PUBLIC_APP_URL (compatibilidad con el resto de la app) → URL de
+ * producción. NUNCA cae a localhost: así el canonical y las imágenes og/twitter
+ * apuntan siempre a un host público real, aunque falte la variable de entorno.
  */
 export function siteUrl(): URL {
-  return new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000');
+  return new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ??
+      process.env.NEXT_PUBLIC_APP_URL ??
+      'https://adie.app',
+  );
 }
 
 /**
@@ -29,7 +38,7 @@ export function landingMetadata(locale: Locale): Metadata {
     openGraph: {
       type: 'website',
       url: path,
-      siteName: 'AdieCoin',
+      siteName: 'adie',
       title: dict.meta.title,
       description: dict.meta.description,
       locale: OG_LOCALES[locale],

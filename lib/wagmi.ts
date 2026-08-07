@@ -9,7 +9,7 @@ import { polygon, polygonAmoy } from 'wagmi/chains';
 const chainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? '137');
 
 export const wagmiConfig = getDefaultConfig({
-  appName: 'AdieCoin',
+  appName: 'adie',
   projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? 'demo',
   chains: [chainId === 80002 ? polygonAmoy : polygon],
   ssr: true,

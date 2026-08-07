@@ -11,10 +11,10 @@ const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f
 
 // Contacto real visible como señal de confianza. Configurable por entorno para
 // que la marca use su propio correo de soporte sin tocar código.
-const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'hola@adiecoin.app';
+const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'hola@adie.app';
 
 export const metadata: Metadata = {
-  title: 'Tu comisión — AdieCoin',
+  title: 'Tu comisión — adie',
   description:
     'Tu dinero se queda seguro y el artista no cobra hasta que tú apruebes la entrega.',
 };
@@ -65,8 +65,8 @@ export default async function CommissionPage({ params }: { params: { id: string 
       <div className="mx-auto w-full max-w-md space-y-4">
         {/* Marca — señal de confianza: esto es un servicio, no un proyecto suelto. */}
         <header className="flex items-center gap-2 px-1">
-          <Image src="/adie-logo.png" alt="AdieCoin" width={28} height={28} priority />
-          <span className="text-sm font-semibold text-ink">AdieCoin</span>
+          <Image src="/adie-logo.png" alt="adie" width={28} height={28} priority />
+          <span className="text-sm font-semibold text-ink">adie</span>
           <span className="ml-auto text-[11px] uppercase tracking-wide text-ink/50">
             Pago protegido
           </span>
@@ -153,7 +153,7 @@ export default async function CommissionPage({ params }: { params: { id: string 
         {/* Contacto real — señal de confianza. */}
         <footer className="px-1 pb-2 text-center text-[11px] leading-relaxed text-ink/50">
           <p>
-            AdieCoin · ¿Dudas antes de continuar?{' '}
+            adie · ¿Dudas antes de continuar?{' '}
             <a href={`mailto:${SUPPORT_EMAIL}`} className="font-medium text-ink/70 underline">
               {SUPPORT_EMAIL}
             </a>

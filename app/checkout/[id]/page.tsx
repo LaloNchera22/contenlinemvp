@@ -39,7 +39,7 @@ export default async function CheckoutPage({ params }: { params: { id: string } 
   return (
     <main className="min-h-screen flex items-center justify-center px-6 py-16">
       <div className="card w-full max-w-md">
-        <p className="text-xs uppercase tracking-wide text-ink/60">Pago seguro · AdieCoin</p>
+        <p className="text-xs uppercase tracking-wide text-ink/60">Pago seguro · adie</p>
         <h1 className="mt-2 text-2xl font-bold">
           ${Number(session.amount_usdc).toFixed(2)} <span className="text-base font-normal text-ink/60">USDC</span>
         </h1>
