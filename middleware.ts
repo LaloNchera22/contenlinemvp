@@ -55,7 +55,8 @@ export async function middleware(req: NextRequest) {
   res.headers.set('Content-Security-Policy', csp);
 
   // Rutas privadas o transaccionales: fuera del índice de buscadores.
-  if (/^\/(dashboard|checkout|api)(\/|$)/.test(req.nextUrl.pathname)) {
+  // /comision/* lleva el nombre del cliente en un link único: no debe indexarse.
+  if (/^\/(dashboard|checkout|comision|api)(\/|$)/.test(req.nextUrl.pathname)) {
     res.headers.set('X-Robots-Tag', 'noindex, nofollow');
   }
   return res;
