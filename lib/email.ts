@@ -32,7 +32,7 @@ export async function sendEmail({
     console.warn('RESEND_API_KEY no configurado; email no enviado');
     return { sent: false, reason: 'no_api_key' };
   }
-  const from = process.env.EMAIL_FROM || 'AdieCoin <noreply@adiecoin.app>';
+  const from = process.env.EMAIL_FROM || 'adie <noreply@adie.app>';
 
   try {
     const res = await fetch('https://api.resend.com/emails', {

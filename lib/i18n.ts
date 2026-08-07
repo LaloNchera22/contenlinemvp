@@ -74,9 +74,9 @@ export type LandingDict = {
 export const dictionaries: Record<Locale, LandingDict> = {
   en: {
     meta: {
-      title: 'AdieCoin — The stablecoin wallet for creators',
+      title: 'adie — The stablecoin wallet for creators',
       description:
-        'AdieCoin gives every creator a stablecoin balance (AUSD). Fund it once with USDC, then run recurring subscriptions, sell content, and accept fan challenges — all settled instantly from your internal balance, and withdrawable back to USDC anytime.',
+        'adie gives every creator a stablecoin balance (AUSD). Fund it once with USDC, then run recurring subscriptions, sell content, and accept fan challenges — all settled instantly from your internal balance, and withdrawable back to USDC anytime.',
       keywords: [
         'creator stablecoin',
         'AUSD',
@@ -91,7 +91,7 @@ export const dictionaries: Record<Locale, LandingDict> = {
     hero: {
       line1: 'A stablecoin balance',
       line2: 'for every creator',
-      body: 'Top up once with USDC and it becomes AUSD in your AdieCoin wallet. Subscriptions renew automatically from your balance, and fans can send you paid challenges — no gas per payment, no middlemen, and you can withdraw back to USDC anytime.',
+      body: 'Top up once with USDC and it becomes AUSD in your adie wallet. Subscriptions renew automatically from your balance, and fans can send you paid challenges — no gas per payment, no middlemen, and you can withdraw back to USDC anytime.',
       signIn: 'Sign in with Ethereum',
       signing: 'Signing…',
       connect: 'Connect your wallet to start',
@@ -124,7 +124,7 @@ export const dictionaries: Record<Locale, LandingDict> = {
       ],
     },
     footer: {
-      tagline: 'AdieCoin · Stablecoin balances and fan challenges for creators',
+      tagline: 'adie · Stablecoin balances and fan challenges for creators',
       dashboard: 'Dashboard',
       docs: 'API · Docs',
       privacy: 'Privacy',
@@ -135,9 +135,9 @@ export const dictionaries: Record<Locale, LandingDict> = {
   },
   es: {
     meta: {
-      title: 'AdieCoin — La wallet stablecoin para creadores',
+      title: 'adie — La wallet stablecoin para creadores',
       description:
-        'AdieCoin le da a cada creador un saldo en stablecoin (AUSD). Recárgalo una vez con USDC y gestiona suscripciones recurrentes, vende contenido y recibe retos de fans — todo se liquida al instante desde tu saldo interno, y puedes retirarlo a USDC cuando quieras.',
+        'adie le da a cada creador un saldo en stablecoin (AUSD). Recárgalo una vez con USDC y gestiona suscripciones recurrentes, vende contenido y recibe retos de fans — todo se liquida al instante desde tu saldo interno, y puedes retirarlo a USDC cuando quieras.',
       keywords: [
         'stablecoin para creadores',
         'AUSD',
@@ -152,7 +152,7 @@ export const dictionaries: Record<Locale, LandingDict> = {
     hero: {
       line1: 'Un saldo en stablecoin',
       line2: 'para cada creador',
-      body: 'Recarga una vez con USDC y se convierte en AUSD en tu wallet de AdieCoin. Las suscripciones se renuevan solas desde tu saldo y los fans pueden enviarte retos pagados — sin gas por pago, sin intermediarios y con retiro a USDC cuando quieras.',
+      body: 'Recarga una vez con USDC y se convierte en AUSD en tu wallet de adie. Las suscripciones se renuevan solas desde tu saldo y los fans pueden enviarte retos pagados — sin gas por pago, sin intermediarios y con retiro a USDC cuando quieras.',
       signIn: 'Iniciar sesión con Ethereum',
       signing: 'Firmando…',
       connect: 'Conecta tu wallet para empezar',
@@ -185,7 +185,7 @@ export const dictionaries: Record<Locale, LandingDict> = {
       ],
     },
     footer: {
-      tagline: 'AdieCoin · Saldos en stablecoin y retos de fans para creadores',
+      tagline: 'adie · Saldos en stablecoin y retos de fans para creadores',
       dashboard: 'Dashboard',
       docs: 'API · Docs',
       privacy: 'Privacidad',
@@ -196,9 +196,9 @@ export const dictionaries: Record<Locale, LandingDict> = {
   },
   pt: {
     meta: {
-      title: 'AdieCoin — A carteira stablecoin para criadores',
+      title: 'adie — A carteira stablecoin para criadores',
       description:
-        'A AdieCoin dá a cada criador um saldo em stablecoin (AUSD). Recarregue uma vez com USDC e gerencie assinaturas recorrentes, venda conteúdo e receba desafios de fãs — tudo liquidado na hora a partir do seu saldo interno, e sacável de volta para USDC quando quiser.',
+        'A adie dá a cada criador um saldo em stablecoin (AUSD). Recarregue uma vez com USDC e gerencie assinaturas recorrentes, venda conteúdo e receba desafios de fãs — tudo liquidado na hora a partir do seu saldo interno, e sacável de volta para USDC quando quiser.',
       keywords: [
         'stablecoin para criadores',
         'AUSD',
@@ -213,7 +213,7 @@ export const dictionaries: Record<Locale, LandingDict> = {
     hero: {
       line1: 'Um saldo em stablecoin',
       line2: 'para cada criador',
-      body: 'Recarregue uma vez com USDC e ele vira AUSD na sua carteira AdieCoin. As assinaturas renovam sozinhas a partir do saldo e os fãs podem enviar desafios pagos — sem gas por pagamento, sem intermediários e com saque para USDC quando quiser.',
+      body: 'Recarregue uma vez com USDC e ele vira AUSD na sua carteira adie. As assinaturas renovam sozinhas a partir do saldo e os fãs podem enviar desafios pagos — sem gas por pagamento, sem intermediários e com saque para USDC quando quiser.',
       signIn: 'Entrar com Ethereum',
       signing: 'Assinando…',
       connect: 'Conecte sua wallet para começar',
@@ -246,7 +246,7 @@ export const dictionaries: Record<Locale, LandingDict> = {
       ],
     },
     footer: {
-      tagline: 'AdieCoin · Saldos em stablecoin e desafios de fãs para criadores',
+      tagline: 'adie · Saldos em stablecoin e desafios de fãs para criadores',
       dashboard: 'Dashboard',
       docs: 'API · Docs',
       privacy: 'Privacidade',

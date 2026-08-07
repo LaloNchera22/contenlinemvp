@@ -9,12 +9,12 @@ import { siteUrl } from '@/lib/seo';
 export const metadata: Metadata = {
   metadataBase: siteUrl(),
   title: {
-    default: 'AdieCoin — The stablecoin wallet for creators',
-    template: '%s · AdieCoin',
+    default: 'adie — The stablecoin wallet for creators',
+    template: '%s · adie',
   },
   description:
     'A stablecoin balance (AUSD) for every creator. Deposit USDC once, then run recurring subscriptions, sell content and accept fan challenges — settled instantly from your internal balance, and withdrawable back to USDC anytime.',
-  applicationName: 'AdieCoin',
+  applicationName: 'adie',
   icons: {
     icon: '/adie-logo.png',
     apple: '/adie-logo.png',
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    siteName: 'AdieCoin',
+    siteName: 'adie',
     type: 'website',
   },
   formatDetection: { telephone: false },

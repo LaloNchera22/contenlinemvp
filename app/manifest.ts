@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'AdieCoin',
-    short_name: 'AdieCoin',
+    name: 'adie',
+    short_name: 'adie',
     description:
       'The stablecoin wallet for creators: an internal AUSD balance for recurring subscriptions, content and fan challenges — funded by USDC on Polygon.',
     start_url: '/',
