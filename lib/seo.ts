@@ -19,6 +19,44 @@ export function siteUrl(): URL {
 }
 
 /**
+ * Metadata de la landing pública (única, en español). El canonical y las
+ * imágenes og/twitter se resuelven contra `metadataBase` (definido en el layout
+ * raíz como `siteUrl()`), de modo que SIEMPRE apuntan a NEXT_PUBLIC_SITE_URL y
+ * nunca a localhost. La imagen og la genera `app/opengraph-image.tsx`.
+ */
+export function publicLandingMetadata(): Metadata {
+  const title = 'adie — Pago protegido para tus comisiones';
+  const description =
+    'Cobra por tus comisiones sin miedo a que no te paguen y paga sin miedo a no recibir. adie resguarda el dinero hasta que apruebas la entrega.';
+
+  return {
+    title: { absolute: title },
+    description,
+    keywords: [
+      'pago protegido',
+      'comisiones para artistas',
+      'escrow para comisiones',
+      'cobrar comisiones seguro',
+      'pago seguro artista cliente',
+    ],
+    alternates: { canonical: '/' },
+    openGraph: {
+      type: 'website',
+      url: '/',
+      siteName: 'adie',
+      title,
+      description,
+      locale: 'es_MX',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+    },
+  };
+}
+
+/**
  * Metadata completa de la landing por idioma: canonical, hreflang, Open Graph
  * y Twitter Card. Cada versión de idioma declara a las demás como alternates
  * para que los buscadores sirvan la correcta según el usuario.

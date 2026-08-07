@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'adie',
     short_name: 'adie',
     description:
-      'The stablecoin wallet for creators: an internal AUSD balance for recurring subscriptions, content and fan challenges — funded by USDC on Polygon.',
+      'Pago protegido para comisiones: el dinero queda seguro hasta que apruebas la entrega, protegiendo al cliente y al artista.',
     start_url: '/',
     display: 'standalone',
     background_color: '#ffffff',

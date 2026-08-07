@@ -9,11 +9,11 @@ import { siteUrl } from '@/lib/seo';
 export const metadata: Metadata = {
   metadataBase: siteUrl(),
   title: {
-    default: 'adie — The stablecoin wallet for creators',
+    default: 'adie — Pago protegido para tus comisiones',
     template: '%s · adie',
   },
   description:
-    'A stablecoin balance (AUSD) for every creator. Deposit USDC once, then run recurring subscriptions, sell content and accept fan challenges — settled instantly from your internal balance, and withdrawable back to USDC anytime.',
+    'Cobra por tus comisiones sin miedo a que no te paguen y paga sin miedo a no recibir. adie resguarda el dinero de la comisión hasta que apruebas la entrega, protegiendo al cliente y al artista.',
   applicationName: 'adie',
   icons: {
     icon: '/adie-logo.png',

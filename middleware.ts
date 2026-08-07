@@ -10,13 +10,25 @@ const SESSION_COOKIE = 'adiecoin-session';
  *     Esto elimina 'unsafe-inline' de script-src (vector XSS) manteniendo
  *     'unsafe-eval', que WalletConnect/RainbowKit exigen en runtime.
  *
- *  2. Protección server-side de /dashboard/*: si no hay un JWT de sesión válido
- *     en la cookie httpOnly, redirige a la home — el usuario no autenticado no
- *     ve siquiera el layout del panel.
+ *  2. Protección server-side de rutas no públicas: si no hay un JWT de sesión
+ *     válido en la cookie httpOnly, redirige a la home — el visitante sin sesión
+ *     no ve el panel, ni la documentación de la API, ni el checkout onchain.
+ *     El código y las rutas siguen existiendo; solo se ocultan del público.
  */
+
+// Prefijos que un visitante sin sesión NO debe alcanzar. La landing pública solo
+// expone el flujo de comisiones; el resto (dashboard, docs/API, checkout) queda
+// detrás de sesión. /comision/* y /api/* NO se listan: el primero es el flujo
+// cliente por link, el segundo se protege con API keys, no con la cookie web.
+const GUARDED_PREFIXES = ['/dashboard', '/docs', '/checkout'];
+
 export async function middleware(req: NextRequest) {
-  // --- 2. Guard de /dashboard ---
-  if (req.nextUrl.pathname.startsWith('/dashboard')) {
+  // --- 2. Guard de rutas no públicas ---
+  const { pathname } = req.nextUrl;
+  const isGuarded = GUARDED_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
+  if (isGuarded) {
     const token = req.cookies.get(SESSION_COOKIE)?.value;
     const valid = token ? await verifyJwt(token, process.env.SUPABASE_JWT_SECRET) : false;
     if (!valid) {
